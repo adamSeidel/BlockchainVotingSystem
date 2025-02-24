@@ -1,5 +1,9 @@
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+// Needs addressing
+import './pages/css/stylesheet.css'
+
 import Layout from "./pages/Layout";
 import Home from "./pages/Home";
 import Vote from "./pages/Vote";
