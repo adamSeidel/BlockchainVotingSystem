@@ -34,4 +34,8 @@ contract Election {
         }
     }
 
+    function getElectionCandidates() public view returns (Candidate[] memory) {
+        return candidates;
+    }
+
 }

@@ -1,8 +1,14 @@
+import React from "react";
+import { ethers } from "ethers";
+import { useContract } from "../context/ContractProvider";
+
 const CastVote = () => {
+    const { electionAdmin, electionCandidates } = useContract();
+
     return (
         <>
             <div style={{ borderStyle: "solid", marginTop: "-1.5px"}}>
-            <h3 style={{ fontWeight: "normal"}}>This election is ran by the <strong style={{ color: "red" }}>UK Electoral Commission</strong> with a blockchain address of <strong style={{ color: "red" }}>XXXXXX</strong></h3>
+            <h3 style={{ fontWeight: "normal"}}>This election is ran by the <strong style={{ color: "red" }}>UK Electoral Commission</strong> with a blockchain address of <strong style={{ color: "red" }}>{electionAdmin}</strong></h3>
             <h3 style={{ fontWeight: "normal"}}>This election is <strong style={{ color: "red" }}>cryptographically</strong> secured via the use of <strong style={{ color: "red" }}>Blockchain and Smart Contract technology</strong></h3>
             </div>
 
@@ -24,6 +30,20 @@ const CastVote = () => {
             </div>
             );
             })} */}
+
+            {electionCandidates.map((proposal, index) => {
+            const name = ethers.decodeBytes32String(proposal.name);
+            return (
+            <div key={index} style={{ padding: '1rem 0' }}>
+            <hr></hr>
+            🗳 {name}
+            <button
+            style={{ marginLeft: '2em' }}>
+            Vote
+            </button>
+            </div>
+            );
+            })}
 
             <div>
             <h3 id="voteMessage"> </h3>
