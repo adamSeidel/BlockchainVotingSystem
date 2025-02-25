@@ -1,5 +1,4 @@
 import CastVote from "../components/CastVote";
-import LiveResults from "../components/LiveResults";
 
 const Vote = () => {
     return (
@@ -7,7 +6,6 @@ const Vote = () => {
         <h1>Vote</h1>
 
         <CastVote />
-        <LiveResults />
 
       </>
     );
