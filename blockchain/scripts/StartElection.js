@@ -23,14 +23,14 @@ async function main() {
 
     console.log("Election contract deployed to:", await token.getAddress());
 
-    saveFrontendFiles(token);
+    saveFrontendFiles(token, await token.getAddress());
 }
 
 function encodeCandidateNames(candidateNames) {
     return candidateNames.map(name => ethers.encodeBytes32String(name));
 }
 
-function saveFrontendFiles(token) {
+function saveFrontendFiles(token, address) {
     const fs = require('fs');
     const contractsDir = path.join(__dirname, '..', '..', 'frontend', 'src', 'contracts');
 
@@ -40,7 +40,7 @@ function saveFrontendFiles(token) {
 
     fs.writeFileSync(
         path.join(contractsDir, 'contract-address.json'),
-        JSON.stringify({ Election: token.address }, undefined, 2)
+        JSON.stringify({ Election: address }, undefined, 2)
     );
 
     const TokenArtifact = artifacts.readArtifactSync('Election');
