@@ -2,8 +2,23 @@ import React from "react";
 import { ethers } from "ethers";
 import { useContract } from "../context/ContractProvider";
 
+const submitVote = async (token, candidate) => {
+    try {
+        const transaction = await token.vote(candidate);
+        await transaction.wait();
+
+        console.log("Vote submitted successfully");
+        document.getElementById("voteMessage").innerHTML = "Vote submitted successfully";
+    } catch (error) {
+        var errorMessage = error.reason;
+
+        document.getElementById("voteMessage").innerHTML = "Error: " + errorMessage;
+    }
+};
+
+
 const CastVote = () => {
-    const { electionAdmin, electionCandidates } = useContract();
+    const { token, electionAdmin, electionCandidates } = useContract();
 
     return (
         <>
@@ -16,21 +31,6 @@ const CastVote = () => {
             <h3 style={{ fontWeight: "normal"}}>Vote for <strong style={{ color: "red" }}>only one candidate</strong> by selecting the <strong style={{ color: "red" }}>vote box</strong> next to your choice</h3>
             </div>
 
-            {/* {proposals.map((proposal, index) => {
-            const name = parseName(parseBytes(proposal.name));
-            return (
-            <div key={index} style={{ padding: '1rem 0' }}>
-            <hr></hr>
-            🗳 {name}
-            <button
-            style={{ marginLeft: '2em' }}
-            onClick={() => voteProposal(index)}>
-            Vote
-            </button>
-            </div>
-            );
-            })} */}
-
             {electionCandidates.map((proposal, index) => {
             const name = ethers.decodeBytes32String(proposal.name);
             return (
@@ -38,7 +38,8 @@ const CastVote = () => {
             <hr></hr>
             🗳 {name}
             <button
-            style={{ marginLeft: '2em' }}>
+            style={{ marginLeft: '2em' }}
+            onClick={() => submitVote(token, index)}>
             Vote
             </button>
             </div>

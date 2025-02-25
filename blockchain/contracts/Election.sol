@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 contract Election {
     struct Voter {
         bool voted;
-        uint vote;
         uint weight;
     }
 
@@ -55,4 +54,23 @@ contract Election {
         voters[voter].weight = 1;
     }
 
+    function vote(uint candidate) public {
+        Voter storage sender = voters[msg.sender];
+
+        if (electionEnded) {
+            revert("The election has ended");
+        }
+
+        if (sender.weight == 0) {
+            revert("You do not have the right to vote");
+        }
+
+        if (sender.voted) {
+            revert("You have already voted");
+        }
+
+        sender.voted = true;
+
+        candidates[candidate].voteCount += 1;
+    }
 }
