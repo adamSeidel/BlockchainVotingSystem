@@ -4,6 +4,7 @@ contract Election {
     struct Voter {
         bool voted;
         uint vote;
+        uint weight;
     }
 
     struct Candidate {
@@ -36,6 +37,22 @@ contract Election {
 
     function getElectionCandidates() public view returns (Candidate[] memory) {
         return candidates;
+    }
+
+    function giveRightToVote(address voter) public {
+        if (msg.sender != admin) {
+            revert("Only the Election Admin can give the right to vote");
+        }
+
+        if (voters[voter].voted) {
+            revert("The voter has already voted");
+        }
+
+        if (voters[voter].weight == 1) {
+            revert("This voter already has the right to vote");
+        }
+
+        voters[voter].weight = 1;
     }
 
 }
