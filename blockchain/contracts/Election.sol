@@ -102,4 +102,24 @@ contract Election {
         
         return votersWhoHaveVoted;
     }
+
+    function getVotersWhoHaveNotVoted() public view returns (address[] memory) {
+        uint count = 0;
+        for (uint i = 0; i < voterAddresses.length; i++) {
+            if (!voters[voterAddresses[i]].voted) {
+                count++;
+            }
+        }
+        address[] memory votersWhoHaveNotVoted = new address[](count);
+        uint index = 0;
+
+        for (uint i = 0; i < voterAddresses.length; i++) {
+            if (!voters[voterAddresses[i]].voted) {
+                votersWhoHaveNotVoted[index] = voterAddresses[i];
+                index++;
+            }
+        }
+
+        return votersWhoHaveNotVoted;
+    }
 }

@@ -14,6 +14,7 @@ export const ContractProvider = ({ children }) => {
   const [electionCandidates, setElectionCandidates] = useState([]);
   const [eligibleVoters, setEligibleVoters] = useState([]);
   const [votersWhoHaveVoted, setVotersWhoHaveVoted] = useState([]);
+  const [votersWhoHaveNotVoted, setVotersWhoHaveNotVoted] = useState([]);
 
   useEffect(() => {
     const init = async () => {
@@ -42,12 +43,16 @@ export const ContractProvider = ({ children }) => {
         // Fetch voters who have voted
         const votersWhoHaveVoted = await contract.getVotersWhoHaveVoted()
         setVotersWhoHaveVoted(votersWhoHaveVoted);
+
+        // Fetch voters who have not voted
+        const votersWhoHaveNotVoted = await contract.getVotersWhoHaveNotVoted()
+        setVotersWhoHaveNotVoted(votersWhoHaveNotVoted);
     };
     init();
   }, []);
 
   return (
-    <ContractContext.Provider value={{ token, electionAdmin, electionCandidates, eligibleVoters, votersWhoHaveVoted }}>
+    <ContractContext.Provider value={{ token, electionAdmin, electionCandidates, eligibleVoters, votersWhoHaveVoted, votersWhoHaveNotVoted }}>
       {children}
     </ContractContext.Provider>
   );
