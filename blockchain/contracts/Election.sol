@@ -138,4 +138,22 @@ contract Election {
 
         electionEnded = true;
     }
+
+    function getElectionWinner() public view returns (bytes32) {
+        if (!electionEnded) {
+            revert("The election has not ended yet");
+        }
+
+        uint maxVotes = 0;
+        uint winningCandidateIndex = 0;
+
+        for (uint i = 0; i < candidates.length; i++) {
+            if (candidates[i].voteCount > maxVotes) {
+                maxVotes = candidates[i].voteCount;
+                winningCandidateIndex = i;
+            }
+        }
+
+        return candidates[winningCandidateIndex].name;
+    }
 }
