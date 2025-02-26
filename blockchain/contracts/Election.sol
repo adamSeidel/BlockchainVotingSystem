@@ -15,6 +15,8 @@ contract Election {
 
     mapping (address => Voter) public voters;
 
+    address[] public voterAddresses;
+
     Candidate[] public candidates;
 
     bool public electionEnded;
@@ -52,6 +54,8 @@ contract Election {
         }
 
         voters[voter].weight = 1;
+
+        voterAddresses.push(voter);
     }
 
     function vote(uint candidate) public {
@@ -72,5 +76,30 @@ contract Election {
         sender.voted = true;
 
         candidates[candidate].voteCount += 1;
+    }
+
+    function getEligibleVoters() public view returns(address[] memory) {
+        return voterAddresses;
+    }
+
+    function getVotersWhoHaveVoted() public view returns (address[] memory) {
+        uint count = 0;
+        for (uint i = 0; i < voterAddresses.length; i++) {
+            if (voters[voterAddresses[i]].voted) {
+                count++;
+            }
+        }
+
+        address[] memory votersWhoHaveVoted = new address[](count);
+
+        uint index = 0;
+        for (uint i = 0; i < voterAddresses.length; i++) {
+            if (voters[voterAddresses[i]].voted) {
+                votersWhoHaveVoted[index] = voterAddresses[i];
+                index++;
+            }
+        }
+        
+        return votersWhoHaveVoted;
     }
 }
