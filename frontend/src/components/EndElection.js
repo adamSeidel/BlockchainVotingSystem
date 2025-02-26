@@ -7,6 +7,7 @@ const endElection = async (token) => {
         document.getElementById("endElectionMessage").innerHTML = "The election has been ended successfully";
     } catch (error) {
         var errorMessage = error.reason;
+        console.log(error)
         document.getElementById("endElectionMessage").innerHTML = "Error: " + errorMessage;
     }
 }
