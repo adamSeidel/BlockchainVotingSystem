@@ -128,12 +128,12 @@ contract Election {
     }
 
     function endElection() public {
-        if (msg.sender != admin) {
-            revert("Only the Election Admin can end the election");
-        }
-
         if (electionEnded) {
             revert("The election has already ended");
+        }
+
+        if (msg.sender != admin) {
+            revert("Only the Election Admin can end the election");
         }
 
         electionEnded = true;
