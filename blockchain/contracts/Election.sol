@@ -41,6 +41,10 @@ contract Election {
     }
 
     function giveRightToVote(address voter) public {
+        if (electionEnded) {
+            revert("The election has ended");
+        }
+
         if (msg.sender != admin) {
             revert("Only the Election Admin can give the right to vote");
         }
@@ -121,5 +125,17 @@ contract Election {
         }
 
         return votersWhoHaveNotVoted;
+    }
+
+    function endElection() public {
+        if (msg.sender != admin) {
+            revert("Only the Election Admin can end the election");
+        }
+
+        if (electionEnded) {
+            revert("The election has already ended");
+        }
+
+        electionEnded = true;
     }
 }
