@@ -4,6 +4,7 @@ contract Election {
     struct Voter {
         bool voted;
         uint weight;
+        bytes32 constituency;
     }
 
     struct Candidate {
@@ -66,7 +67,7 @@ contract Election {
         return constituencies[0].candidates;
     }
 
-    function giveRightToVote(address voter) public {
+    function giveRightToVote(address voter, bytes32 constituency) public {
         if (electionEnded) {
             revert("The election has ended");
         }
@@ -84,6 +85,7 @@ contract Election {
         }
 
         voters[voter].weight = 1;
+        voters[voter].constituency = constituency;
 
         voterAddresses.push(voter);
     }
