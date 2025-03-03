@@ -11,33 +11,59 @@ contract Election {
         uint voteCount;
     }
 
+    struct Constituency {
+        bytes32 name;
+        Candidate[] candidates;
+    }
+
     address public admin;
 
     mapping (address => Voter) public voters;
+    mapping (bytes32 => uint) public constituencyNameToIndex;
 
     address[] public voterAddresses;
 
-    Candidate[] public candidates;
+    Constituency[] public constituencies;
 
     bool public electionEnded;
 
-    constructor (bytes32[] memory candidateNames) {
+    constructor (bytes32[] memory constituencyNames, bytes32[] memory candidateNames) {
         electionEnded = false;
 
         admin = msg.sender;
 
-        for (uint i = 0; i < candidateNames.length; i++) {
-            Candidate memory candidate = Candidate({
-                name: candidateNames[i],
-                voteCount: 0
-            });
+        for (uint i = 0; i < constituencyNames.length; i++) {
+            Constituency storage constituency = constituencies.push();
+            constituency.name = constituencyNames[i];
 
-            candidates.push(candidate);
+            for (uint j = 0; j < candidateNames.length; j++) {
+                Candidate memory candidate = Candidate({
+                    name: candidateNames[j],
+                    voteCount: 0
+                });
+
+                constituency.candidates.push(candidate);
+            }
+
+            constituencyNameToIndex[constituencyNames[i]] = i;
         }
     }
 
+    function getCandidatesByConstituency(bytes32 constituencyName) public view returns (Candidate[] memory) {
+        uint constituencyIndex = constituencyNameToIndex[constituencyName];
+        return constituencies[constituencyIndex].candidates;
+    }
+
+    function getConstituencyNames() public view returns (bytes32[] memory) {
+        bytes32[] memory names = new bytes32[](constituencies.length);
+        for (uint i = 0; i < constituencies.length; i++) {
+            names[i] = constituencies[i].name;
+        }
+        return names;
+    }
+
     function getElectionCandidates() public view returns (Candidate[] memory) {
-        return candidates;
+        return constituencies[0].candidates;
     }
 
     function giveRightToVote(address voter) public {
@@ -79,7 +105,7 @@ contract Election {
 
         sender.voted = true;
 
-        candidates[candidate].voteCount += 1;
+        // candidates[candidate].voteCount += 1;
     }
 
     function getEligibleVoters() public view returns(address[] memory) {
@@ -147,13 +173,14 @@ contract Election {
         uint maxVotes = 0;
         uint winningCandidateIndex = 0;
 
-        for (uint i = 0; i < candidates.length; i++) {
-            if (candidates[i].voteCount > maxVotes) {
-                maxVotes = candidates[i].voteCount;
-                winningCandidateIndex = i;
-            }
-        }
+        // for (uint i = 0; i < candidates.length; i++) {
+        //     if (candidates[i].voteCount > maxVotes) {
+        //         maxVotes = candidates[i].voteCount;
+        //         winningCandidateIndex = i;
+        //     }
+        // }
 
-        return candidates[winningCandidateIndex].name;
+        // return candidates[winningCandidateIndex].name;
+        return "";
     }
 }
