@@ -5,6 +5,7 @@ import VotersWhoHaveVoted from "../components/VotersWhoHaveVoted";
 import VotersWhoHaveNotVoted from "../components/VotersWhoHaveNotVoted";
 import EndElection from "../components/EndElection";
 import DisplayResults from "../components/DisplayResults";
+import DisplayConstituencies from "../components/DisplayConstituencies";
 
 const Admin = () => {
     return (
@@ -13,6 +14,7 @@ const Admin = () => {
 
         <LiveResults />
         <AddVoter />
+        <DisplayConstituencies />
         <DisplayElectoralRegister />
         <VotersWhoHaveVoted />
         <VotersWhoHaveNotVoted />
