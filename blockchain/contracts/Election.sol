@@ -29,26 +29,9 @@ contract Election {
     bool public electionEnded;
 
     constructor () {
-    // constructor (bytes32[] memory constituencyNames, bytes32[] memory candidateNames) {
         electionEnded = false;
 
         admin = msg.sender;
-
-        // for (uint i = 0; i < constituencyNames.length; i++) {
-        //     Constituency storage constituency = constituencies.push();
-        //     constituency.name = constituencyNames[i];
-
-        //     for (uint j = 0; j < candidateNames.length; j++) {
-        //         Candidate memory candidate = Candidate({
-        //             name: candidateNames[j],
-        //             voteCount: 0
-        //         });
-
-        //         constituency.candidates.push(candidate);
-        //     }
-
-        //     constituencyNameToIndex[constituencyNames[i]] = i;
-        // }
     }
 
     function addConstituency(bytes32 constituencyName, bytes32[] memory candidateNames) public {
@@ -69,7 +52,6 @@ contract Election {
         constituencyNameToIndex[constituencyName] = index;
     }
 
-    // Tested
     function getCandidateNamesByConstituency(bytes32 constituencyName) public view returns (bytes32[] memory) {
         uint constituencyIndex = constituencyNameToIndex[constituencyName];
 
@@ -81,7 +63,6 @@ contract Election {
         return candidateNames;
     }
 
-    // Tested 
     function getConstituencyNames() public view returns (bytes32[] memory) {
         bytes32[] memory names = new bytes32[](constituencies.length);
         for (uint i = 0; i < constituencies.length; i++) {
@@ -90,7 +71,6 @@ contract Election {
         return names;
     }
 
-    // Tested
     function giveRightToVote(address voter, bytes32 voterConstituency) public {
         if (electionEnded) {
             revert("The election has ended");
@@ -114,7 +94,6 @@ contract Election {
         voterAddresses.push(voter);
     }
 
-    // Tested
     function vote(uint candidate) public {
         Voter storage sender = voters[msg.sender];
 
@@ -137,24 +116,20 @@ contract Election {
         constituencies[constituencyIndex].candidates[candidate].voteCount += 1;
     }
 
-    // Tested
     function getCandidatesByConstituency(bytes32 constituencyName) public view returns (Candidate[] memory) {
         uint constituencyIndex = constituencyNameToIndex[constituencyName];
 
         return constituencies[constituencyIndex].candidates;
     }
 
-    // Tested
     function getEligibleVoters() public view returns(address[] memory) {
         return voterAddresses;
     }
 
-    // Tested
     function getVoterConstituency(address voter) public view returns(bytes32) {
         return voters[voter].constituency;
     }
 
-    // Tested
     function getEligibleVotersConstituencies() public view returns(bytes32[] memory) {
         bytes32[] memory voterConstituencies = new bytes32[](voterAddresses.length);
         
@@ -164,7 +139,6 @@ contract Election {
         return voterConstituencies;
     }
 
-    // Tested
     function getEligibleVotersAndConstituency() public view returns(address[] memory, bytes32[] memory) {
         bytes32[] memory voterConstituencies = new bytes32[](voterAddresses.length);
         
@@ -174,7 +148,6 @@ contract Election {
         return (voterAddresses, voterConstituencies);
     }
 
-    // Tested
     function getVotersWhoHaveVoted() public view returns (address[] memory) {
         uint count = 0;
         for (uint i = 0; i < voterAddresses.length; i++) {
@@ -196,7 +169,6 @@ contract Election {
         return votersWhoHaveVoted;
     }
 
-    // Tested
     function getVotersWhoHaveNotVoted() public view returns (address[] memory) {
         uint count = 0;
         for (uint i = 0; i < voterAddresses.length; i++) {
@@ -217,7 +189,6 @@ contract Election {
         return votersWhoHaveNotVoted;
     }
 
-    // Tested
     function endElection() public {
         if (electionEnded) {
             revert("The election has already ended");
@@ -230,7 +201,6 @@ contract Election {
         electionEnded = true;
     }
 
-    // Tested
     function getConstituencyWinner(bytes32 constituencyName) public view returns (bytes32) {
         if (!electionEnded) {
             revert("The election has not ended yet");
@@ -251,11 +221,13 @@ contract Election {
         return constituencies[constituencyIndex].candidates[winningCandidateIndex].name;
     }
 
-    // Tested
     function getElectionWinner() public view returns (bytes32) {
         if (!electionEnded) {
             revert("The election has not ended yet");
         }
+
+        uint maxVotes = 0;
+        uint winningCandidateIndex = 0;
 
         Candidate[] memory candidates = new Candidate[](constituencies[0].candidates.length);
         for (uint i = 0; i < candidates.length; i++) {
@@ -264,8 +236,6 @@ contract Election {
         }
 
         for (uint i = 0; i < constituencies.length; i++) {
-            uint maxVotes = 0;
-            uint winningCandidateIndex = 0;
 
             for (uint j = 0; j < constituencies[i].candidates.length; j++) {
                 if (constituencies[i].candidates[j].voteCount > maxVotes) {
@@ -277,8 +247,8 @@ contract Election {
             candidates[winningCandidateIndex].voteCount += 1;
         }
 
-        uint maxVotes = 0;
-        uint winningCandidateIndex = 0;
+        maxVotes = 0;
+        winningCandidateIndex = 0;
 
         for (uint i = 0; i < candidates.length; i++) {
             if (candidates[i].voteCount > maxVotes) {
