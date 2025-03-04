@@ -6,7 +6,7 @@ describe("Election Contract", function () {
 
   beforeEach(async function () {
     // Get the signers: the deployer will act as admin and another account as a voter
-    [admin, voter, voter2] = await ethers.getSigners();
+    [admin, voter, voter2, voter3, voter4] = await ethers.getSigners();
 
     // Convert string values to bytes32 using ethers.utils.formatBytes32String
     const constituencyNames = [
@@ -159,5 +159,28 @@ describe("Election Contract", function () {
     const constituencyWinner = await election.getConstituencyWinner(ethers.encodeBytes32String("Aberafan Maesteg"));
 
     expect(constituencyWinner).to.equal(ethers.encodeBytes32String("Conservative and Unionist Party"));
+  })
+
+  it("should return the overall winner of an election", async function () {
+    await election.giveRightToVote(voter.address, ethers.encodeBytes32String("Aberafan Maesteg"));
+    await election.giveRightToVote(voter2.address, ethers.encodeBytes32String("Aberafan Maesteg"));
+    await election.giveRightToVote(voter3.address, ethers.encodeBytes32String("Aberdeen North"));
+    await election.giveRightToVote(voter4.address, ethers.encodeBytes32String("Aberdeen North"));
+
+    await election.connect(voter).vote(0) // Conservative - Aberafan
+    await election.connect(voter2).vote(1) // Labour - Aberafan
+    await election.connect(voter3).vote(0) // Conservative - Aberdeen
+    await election.connect(voter4).vote(0) // Conservative - Aberdeen
+
+    await election.endElection();
+
+    const aberafanWinner = await election.getConstituencyWinner(ethers.encodeBytes32String("Aberafan Maesteg"));
+    expect(aberafanWinner).to.equal(ethers.encodeBytes32String("Conservative and Unionist Party"));
+
+    const aberdeenWinner = await election.getConstituencyWinner(ethers.encodeBytes32String("Aberdeen North"));
+    expect(aberdeenWinner).to.equal(ethers.encodeBytes32String("Conservative and Unionist Party"));
+    
+    const electionWinner = await election.getElectionWinner();
+    expect(electionWinner).to.equal(ethers.encodeBytes32String("Conservative and Unionist Party"));
   })
 });
