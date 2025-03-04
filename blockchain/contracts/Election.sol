@@ -231,4 +231,43 @@ contract Election {
 
         return constituencies[constituencyIndex].candidates[winningCandidateIndex].name;
     }
+
+    // Tested
+    function getElectionWinner() public view returns (bytes32) {
+        if (!electionEnded) {
+            revert("The election has not ended yet");
+        }
+
+        Candidate[] memory candidates = new Candidate[](constituencies[0].candidates.length);
+        for (uint i = 0; i < candidates.length; i++) {
+            candidates[i].name = constituencies[0].candidates[i].name;
+            candidates[i].voteCount = 0;
+        }
+
+        for (uint i = 0; i < constituencies.length; i++) {
+            uint maxVotes = 0;
+            uint winningCandidateIndex = 0;
+
+            for (uint j = 0; j < constituencies[i].candidates.length; j++) {
+                if (constituencies[i].candidates[j].voteCount > maxVotes) {
+                    maxVotes = constituencies[i].candidates[j].voteCount;
+                    winningCandidateIndex = j;
+                }
+            }
+
+            candidates[winningCandidateIndex].voteCount += 1;
+        }
+
+        uint maxVotes = 0;
+        uint winningCandidateIndex = 0;
+
+        for (uint i = 0; i < candidates.length; i++) {
+            if (candidates[i].voteCount > maxVotes) {
+                maxVotes = candidates[i].voteCount;
+                winningCandidateIndex = i;
+            }
+        }
+
+        return candidates[winningCandidateIndex].name;
+    }
 }
