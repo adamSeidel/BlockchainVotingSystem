@@ -16,18 +16,20 @@ async function main() {
         'Reform UK',
         'Green Party'
     ];
-    const encodedCandidates = encodeCandidateNames(candidates);
+    const encodedCandidates = candidates.map(name => ethers.encodeBytes32String(name));
 
-    const token = await Token.deploy(encodedCandidates);
+    const constituencies = [
+        'Aberafan Maesteg',
+        'Aberdeen North'
+    ];
+    const encodedConstituencies = constituencies.map(name => ethers.encodeBytes32String(name));
+
+    const token = await Token.deploy(encodedConstituencies, encodedCandidates);
     await token.waitForDeployment();
 
     console.log("Election contract deployed to:", await token.getAddress());
 
     saveFrontendFiles(token, await token.getAddress());
-}
-
-function encodeCandidateNames(candidateNames) {
-    return candidateNames.map(name => ethers.encodeBytes32String(name));
 }
 
 function saveFrontendFiles(token, address) {
