@@ -29,12 +29,6 @@ describe("Election Contract", function () {
     // Get the signers: the deployer will act as admin and another account as a voter
     [admin, voter, voter2, voter3, voter4] = await ethers.getSigners();
 
-    // // Convert string values to bytes32 using ethers.utils.formatBytes32String
-    // const constituencyNames = [
-    //   ethers.encodeBytes32String("Aberafan Maesteg"),
-    //   ethers.encodeBytes32String("Aberdeen North")
-    // ];
-
     // Taken from the UK 2024 General Election
     candidateNames = [
       ethers.encodeBytes32String("Conservative and Unionist Party"),
@@ -86,24 +80,43 @@ describe("Election Contract", function () {
 
     const signers = await ethers.getSigners();
 
-    const n = 34954;
+    const n = [2903, 17838, 916, 7484, 1094, 0, 4719, 0, 0, 0, 0, 0];
 
-    for (let i = 0; i < n; i++) {
-      const voter = ethers.Wallet.createRandom().connect(ethers.provider);
-      await admin.sendTransaction({
-        to: voter.address,
-        value: ethers.parseEther("0.005")
-      });
+    for (let j = 0; j < n.length; j++) {
+      for (let i = 0; i < n[j]; i++) {
+        const voter = ethers.Wallet.createRandom().connect(ethers.provider);
+        await admin.sendTransaction({
+          to: voter.address,
+          value: ethers.parseEther("0.005")
+        });
 
-      await election.giveRightToVote(voter.address, constituencyNames[0]);
-      await election.connect(voter).vote(0);
+        await election.giveRightToVote(voter.address, constituencyNames[0]);
+        await election.connect(voter).vote(j);
+      }
     }
 
     // Retrieve the candidates for the first constituency
     const candidates = await election.getCandidatesByConstituency(constituencyNames[0]);
 
-    // Verify that candidate at index 1 has received n votes
-    expect(candidates[0].voteCount).to.equal(n);
+    // Verify that the candidates have the right amount of votes
+    expect(candidates[0].voteCount).to.equal(n[0]);
+    expect(candidates[1].voteCount).to.equal(n[1]);
+    expect(candidates[2].voteCount).to.equal(n[2]);
+    expect(candidates[3].voteCount).to.equal(n[3]);
+    expect(candidates[4].voteCount).to.equal(n[4]);
+    expect(candidates[5].voteCount).to.equal(n[5]);
+    expect(candidates[6].voteCount).to.equal(n[6]);
+    expect(candidates[7].voteCount).to.equal(n[7]);
+    expect(candidates[8].voteCount).to.equal(n[8]);
+    expect(candidates[9].voteCount).to.equal(n[9]);
+    expect(candidates[10].voteCount).to.equal(n[10]);
+    expect(candidates[11].voteCount).to.equal(n[11]);
+
+    // Verify that the winner is the Labour party
+    await election.endElection();
+    const constituencyWinner = await election.getConstituencyWinner(constituencyNames[0]);
+
+    expect(constituencyWinner).to.equal(ethers.encodeBytes32String("Labour Party"));
   })
 
   it("should add a voter successfully", async function () {
