@@ -4,6 +4,7 @@ import { useContract } from "../context/ContractProvider";
 
 const addNewVoter = async (token, selectedConstituency) => {
     var newVoterAddress = document.getElementById("newVoterAddress").value;
+    var selectedConstituency = 
 
     try {
         await token.giveRightToVote(newVoterAddress, selectedConstituency);
