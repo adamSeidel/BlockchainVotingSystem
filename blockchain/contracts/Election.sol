@@ -28,26 +28,45 @@ contract Election {
 
     bool public electionEnded;
 
-    constructor (bytes32[] memory constituencyNames, bytes32[] memory candidateNames) {
+    constructor () {
+    // constructor (bytes32[] memory constituencyNames, bytes32[] memory candidateNames) {
         electionEnded = false;
 
         admin = msg.sender;
 
-        for (uint i = 0; i < constituencyNames.length; i++) {
-            Constituency storage constituency = constituencies.push();
-            constituency.name = constituencyNames[i];
+        // for (uint i = 0; i < constituencyNames.length; i++) {
+        //     Constituency storage constituency = constituencies.push();
+        //     constituency.name = constituencyNames[i];
 
-            for (uint j = 0; j < candidateNames.length; j++) {
-                Candidate memory candidate = Candidate({
-                    name: candidateNames[j],
-                    voteCount: 0
-                });
+        //     for (uint j = 0; j < candidateNames.length; j++) {
+        //         Candidate memory candidate = Candidate({
+        //             name: candidateNames[j],
+        //             voteCount: 0
+        //         });
 
-                constituency.candidates.push(candidate);
-            }
+        //         constituency.candidates.push(candidate);
+        //     }
 
-            constituencyNameToIndex[constituencyNames[i]] = i;
+        //     constituencyNameToIndex[constituencyNames[i]] = i;
+        // }
+    }
+
+    function addConstituency(bytes32 constituencyName, bytes32[] memory candidateNames) public {
+        uint index = constituencies.length;
+        constituencies.push();
+        Constituency storage constituency = constituencies[index];
+        constituency.name = constituencyName;
+
+        for (uint i = 0; i < candidateNames.length; i++) {
+            Candidate memory candidate = Candidate({
+                name: candidateNames[i],
+                voteCount: 0
+            });
+
+            constituency.candidates.push(candidate);
         }
+
+        constituencyNameToIndex[constituencyName] = index;
     }
 
     // Tested
