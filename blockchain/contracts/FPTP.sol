@@ -1,6 +1,6 @@
 pragma solidity ^0.8.0;
 
-contract Election {
+contract FPTP {
     struct Voter {
         bool voted;
         uint weight;
