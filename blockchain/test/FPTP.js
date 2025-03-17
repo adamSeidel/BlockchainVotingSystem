@@ -59,7 +59,6 @@ describe("FPTP Contract", function () {
     await election.waitForDeployment();
   });
 
-  // Pass
   it("should return all the election constituencies", async function () {
     const constituencyNames = await election.getConstituencyNames();
     expect(constituencyNames.length).to.equal(650);
