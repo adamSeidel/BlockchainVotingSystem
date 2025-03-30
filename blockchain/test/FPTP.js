@@ -21,7 +21,7 @@ function readConstituencyNames(file) {
   });
 }
 
-describe("FPTP Contract", function () {
+describe("FPTP Multiple Constituency Election", function () {
   let Election, election, admin, voter, constituencyNames, candidateNames;
   
   before(async function () {
@@ -78,38 +78,38 @@ describe("FPTP Contract", function () {
     }
   })
 
-  // it("should simulate an Aberafan Maesteg constituency vote", async function () {
-  //   this.timeout(1000000);
+  it("should simulate an Aberafan Maesteg constituency vote", async function () {
+    this.timeout(1000000);
 
-  //   const signers = await ethers.getSigners();
+    const signers = await ethers.getSigners();
 
-  //   for (let j = 0; j < constituencies[0].votes.length; j++) {
-  //     for (let i = 0; i < constituencies[0].votes[j]; i++) {
-  //       const voter = ethers.Wallet.createRandom().connect(ethers.provider);
-  //       await admin.sendTransaction({
-  //         to: voter.address,
-  //         value: ethers.parseEther("0.005")
-  //       });
+    for (let j = 0; j < constituencies[0].votes.length; j++) {
+      for (let i = 0; i < constituencies[0].votes[j]; i++) {
+        const voter = ethers.Wallet.createRandom().connect(ethers.provider);
+        await admin.sendTransaction({
+          to: voter.address,
+          value: ethers.parseEther("0.005")
+        });
 
-  //       await election.giveRightToVote(voter.address, constituencies[0].constituencyName);
-  //       await election.connect(voter).vote(j);
-  //     }
-  //   }
+        await election.giveRightToVote(voter.address, constituencies[0].constituencyName);
+        await election.connect(voter).vote(j);
+      }
+    }
 
-  //   // Retrieve the candidates for the first constituency
-  //   const candidates = await election.getCandidatesByConstituency(constituencies[0].constituencyName);
+    // Retrieve the candidates for the first constituency
+    const candidates = await election.getCandidatesByConstituency(constituencies[0].constituencyName);
 
-  //   // Verify that the candidates have the right amount of votes
-  //   for (let i = 0; i < candidates.length; i++) {
-  //     expect(candidates[i].voteCount).to.equal(constituencies[0].votes[i]);
-  //   }
+    // Verify that the candidates have the right amount of votes
+    for (let i = 0; i < candidates.length; i++) {
+      expect(candidates[i].voteCount).to.equal(constituencies[0].votes[i]);
+    }
 
-  //   // Verify that the winner is the Labour party
-  //   await election.endElection();
-  //   const constituencyWinner = await election.getConstituencyWinner(constituencies[0].constituencyName);
+    // Verify that the winner is the Labour party
+    await election.endElection();
+    const constituencyWinner = await election.getConstituencyWinner(constituencies[0].constituencyName);
 
-  //   expect(constituencyWinner).to.equal(ethers.encodeBytes32String("Labour Party"));
-  // })
+    expect(constituencyWinner).to.equal(ethers.encodeBytes32String("Labour Party"));
+  })
 
   // it("should simulate an Aberdeen North constituency vote", async function () {
   //   this.timeout(1000000);

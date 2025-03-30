@@ -21,7 +21,7 @@ function readConstituencyNames(file) {
   });
 }
 
-describe("Election", function () {
+describe("FPTP Single Constituency Election", function () {
     let Election, election, admin, voter, constituencyNames, candidateNames;
 
     before(async function () {
