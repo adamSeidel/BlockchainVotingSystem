@@ -25,7 +25,6 @@ describe("FPTP Multiple Constituency Election", function () {
   let Election, election, admin, voter, constituencyNames, candidateNames;
   
   before(async function () {
-    constituencies = await readConstituencyNames("./test/UK-2024-Election-Results.csv");
 
     // Taken from the UK 2024 General Election
     candidateNames = [
