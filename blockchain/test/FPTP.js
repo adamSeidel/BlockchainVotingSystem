@@ -25,6 +25,7 @@ describe("FPTP Multiple Constituency Election", function () {
   let Election, election, admin, voter, constituencyNames, candidateNames;
   
   before(async function () {
+    constituencies = await readConstituencyNames("./test/UK-2024-Election-Results.csv");
 
     // Taken from the UK 2024 General Election
     candidateNames = [
@@ -81,7 +82,10 @@ describe("FPTP Multiple Constituency Election", function () {
     this.timeout(1000000);
 
     const signers = await ethers.getSigners();
+    const voters = [];
 
+    // Create voter wallets
+    console.time("Creating Voter Wallets");
     for (let j = 0; j < constituencies[0].votes.length; j++) {
       for (let i = 0; i < constituencies[0].votes[j]; i++) {
         const voter = ethers.Wallet.createRandom().connect(ethers.provider);
@@ -91,9 +95,24 @@ describe("FPTP Multiple Constituency Election", function () {
         });
 
         await election.giveRightToVote(voter.address, constituencies[0].constituencyName);
-        await election.connect(voter).vote(j);
+
+        voters.push(voter)
+        // await election.connect(voter).vote(j);
       }
     }
+    console.timeEnd("Creating Voter Wallets");
+    
+
+    // Place votes
+    console.time("Voting");
+    votersIndex = 0
+    for (let j = 0; j < constituencies[0].votes.length; j++) {
+      for (let i = 0; i < constituencies[0].votes[j]; i++) {
+        await election.connect(voters[votersIndex]).vote(j);
+        votersIndex++;
+      }
+    }
+    console.timeEnd("Voting");
 
     // Retrieve the candidates for the first constituency
     const candidates = await election.getCandidatesByConstituency(constituencies[0].constituencyName);
