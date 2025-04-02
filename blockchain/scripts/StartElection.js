@@ -7,22 +7,7 @@ async function main() {
     const accountBalance = await deployer.provider.getBalance(deployer.address);
     console.log("Account balance:", accountBalance.toString());
 
-    const Token = await ethers.getContractFactory("Election");
-
-    const candidates = [
-        'Conservative and Unionist Party',
-        'Labour Party',
-        'Liberal Democrats',
-        'Reform UK',
-        'Green Party'
-    ];
-    const encodedCandidates = candidates.map(name => ethers.encodeBytes32String(name));
-
-    const constituencies = [
-        'Aberafan Maesteg',
-        'Aberdeen North'
-    ];
-    const encodedConstituencies = constituencies.map(name => ethers.encodeBytes32String(name));
+    const Token = await ethers.getContractFactory("FPTP");
 
     const token = await Token.deploy(encodedConstituencies, encodedCandidates);
     await token.waitForDeployment();
