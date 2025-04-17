@@ -82,95 +82,67 @@ contract FPTP {
     event ElectionWinner(bytes32 electionWinner, uint electedSeats);
 
     // Modifiers
-    // Admin only access modifier
     modifier onlyAdmin()  {
         require(msg.sender == admin, 
         "Only the election admin can perform this action");
         _;
     }
-
-    // Election started modifier
     modifier electionHasStarted() {
         require(electionStarted,
         "The election has not started so it is not possible to perform this action");
         _;
     }
-
-    // Election not started modifier
     modifier electionHasNotStarted() {
         require(!electionStarted, 
         "The election has already started so it is not possible to perform this action");
         _;
     }
-
-    // Election has ended modifer
     modifier electionHasEnded() {
         require(electionEnded, "The election has ended yet so it is not possible to perform this action");
         _;
     }
-
-    // Election has not ended modifer
     modifier electionHasNotEnded() {
         require(!electionEnded,
         "The election has already ended so it is not possible to perform this action");
         _;
     }
-
-    // Results have not been calculated modifier
-    modifier resultsHaveNotBeenCalculated() {
-        require(!resultsCalculated, "The election results have already been calculated so it is not possible to perform this action");
-        _;
-    }
-
     modifier resultsHaveBeenCalculated() {
         require(resultsCalculated, "The election results have not been calculated so it is not possible to perform this action");
         _;
     }
-
-    // Constituency must not exist modifier
-    modifier constituencyMustNotExist(bytes32 constituencyName) {
-        require(!constituencyExists[constituencyName], "Constituency already exists");
+    modifier resultsHaveNotBeenCalculated() {
+        require(!resultsCalculated, "The election results have already been calculated so it is not possible to perform this action");
         _;
     }
-
-    // Constituency must exist modifier
     modifier constituencyMustExist(bytes32 constituencyName) {
         require(constituencyExists[constituencyName], "Constituency does not exist");
         _;
     }
-
-    // Voter must not exist modifier
+    modifier constituencyMustNotExist(bytes32 constituencyName) {
+        require(!constituencyExists[constituencyName], "Constituency already exists");
+        _;
+    }
+    modifier voterMustExist(address voterAddress) {
+        require(registeredVoters[voterAddress], "This voter is not registered to vote");
+        _;
+    }
     modifier voterMustNotExist(address voterAddress) {
         require(!registeredVoters[voterAddress], 
             "This voter is already registered to vote");
         _;
     }
-
-    // Voter must exist modifier
-    modifier voterMustExist(address voterAddress) {
-        require(registeredVoters[voterAddress], "This voter is not registered to vote");
-        _;
-    }
-
-    // Candidate must exist modifier
     modifier candiateMustExist(bytes32 constituencyName, bytes32 candidateName) {
         uint constituencyIndex = constituencyIndexs[constituencyName];
-
         require(constituencies[constituencyIndex].candidateExistance[candidateName],
             "This candidate does not exist");
         _;
     }
-
-    // Candidate must not exist modifier
     modifier candiateMustNotExist(bytes32 constituencyName, bytes32 candidateName) {
         uint constituencyIndex = constituencyIndexs[constituencyName];
-
         require(!constituencies[constituencyIndex].candidateExistance[candidateName],
             "This candidate already exists");
         _;
     }
-
-    // Party must exist modifer
     modifier partyMustExist(bytes32 partyName) {
         require(partyExists[partyName], "This party does not exist");
         _;
@@ -260,187 +232,13 @@ contract FPTP {
             partyIndexs[candidateParty] = electionParties.length - 1;
             // Record party existance in the mapping
             partyExists[candidateParty] = true;
+
+            // Party added event needed
         }
 
         // Record that a new candidate has been added
         emit CandidateAdded(candidateName, candidateParty, candidateConstituency);
         return true;
-    }
-
-    // Potentially not needed if event emits work
-    /// @notice Retrieve the names of all the constituencies in the election
-    /// @return constituencyNames The names (bytes32) of all the constituencies in the election
-    function getConstituencies()
-        external
-        view
-        returns (bytes32[] memory)
-    {
-        // Initialse an array to hold the constituency names
-        bytes32[] memory constituencyNames = new bytes32[](constituencies.length);
-
-        // Add constituency name to the array for each constituency
-        for (uint i = 0; i < constituencies.length; i++) {
-            constituencyNames[i] = constituencies[i].name;
-        }
-
-        return constituencyNames;
-    }
-
-    /// Potentiall not needed if event emits work
-    /// @notice Retrieve the names of all the parties in the election
-    /// @return partyNames The names (bytes32) of all the parties in the election
-    function getPartyNames()
-        external
-        view
-        returns (bytes32[] memory)
-    {
-        // Initialise an array to hold the party names
-        bytes32[] memory partyNames = new bytes32[](electionParties.length);
-
-        // Add party
-        for (uint i = 0; i < electionParties.length; i++) {
-            partyNames[i] = electionParties[i].name;
-        }
-
-        return partyNames;
-    }
-
-    /// Testing function
-    /// @notice Retrieve a partys information
-    /// @return name The name (bytes32) of the party
-    /// @return electedSeats The number (uint) of elected seats for that party
-    function getParty(bytes32 partyName)
-        external
-        view
-        onlyAdmin
-        partyMustExist(partyName)
-        returns (bytes32 name, uint electedSeats)
-    {
-        // Retrieve the index of the party
-        uint partyIndex = partyIndexs[partyName];
-
-        // Retrieve the party data
-        Party storage party = electionParties[partyIndex];
-
-        // Return the party data
-        return (party.name, party.electedSeats);
-    }
-
-    /// Test function
-    /// @notice Retrieve the index of a party from the party index mapping
-    /// @param partyName The name (bytes32) of the party to retrieve the index of
-    /// @return partyIndex The index (uint) of the party in the party array
-    function getPartyIndex(bytes32 partyName)
-        external
-        view
-        partyMustExist(partyName)
-        returns (uint)
-    {
-        return partyIndexs[partyName];
-    }
-
-    /// Test function
-    /// @notice Retrieve the existence of a party in the election
-    /// @param partyName The name (bytes32) of the party to check the existence of
-    /// @return partyExists Bool indicating whether the party exists
-    function getPartyExistance(bytes32 partyName)
-        external
-        view
-        returns (bool)
-    {
-        return partyExists[partyName];
-    }
-
-    // Potentially not needed if event emits work
-    /// @notice Retrieve all the candidates standing in a constituency
-    /// @param constituencyName The name (bytes32) of the constituency to return the candidates of
-    /// @return candidates Array (bytes32) of all candidates in the constituency
-    function getConstituencyCandidates(bytes32 constituencyName)
-        external
-        view
-        constituencyMustExist(constituencyName)
-        returns (bytes32[] memory)
-    {
-        // The index of the constituency in the constituency array
-        uint constituencyIndex = constituencyIndexs[constituencyName];
-        // Retrieve the constituency data
-        Constituency storage constituency = constituencies[constituencyIndex];
-
-        // Initialise new array to hold the names (bytes32) of all the candidates
-        bytes32[] memory candidates = new bytes32[](constituency.candidates.length);
-
-        // Add the names of each candidate to the candidates array
-        for (uint i = 0; i < constituency.candidates.length; i++) {
-            candidates[i] = constituency.candidates[i].name;
-        }
-
-        return candidates;
-    }
-
-    /// Testing function only
-    /// @notice Returns the candidate data of a constituency
-    /// @param constituencyName The name (bytes32) of the constituency to retrieve the candidate from
-    /// @param candidateName The name (bytes32) of the candidate to retrieve the data of
-    function getCandidate(bytes32 constituencyName, bytes32 candidateName)
-        external
-        view
-        onlyAdmin
-        constituencyMustExist(constituencyName)
-        candiateMustExist(constituencyName, candidateName)
-        returns (bytes32 name, bytes32 party, bytes32 constituency, uint votes)
-    {
-        // Retrieve the index of the constituency
-        uint constituencyIndex = constituencyIndexs[constituencyName];
-
-        // Retrieve the index of the candidate within the constituency
-        uint candidateIndex = constituencies[constituencyIndex].candidateIndexs[candidateName];
-
-        // Retrieve the candidate data
-        Candidate storage candidate = constituencies[constituencyIndex].candidates[candidateIndex];
-
-        // Return the candidate data
-        return (candidate.name, candidate.party, candidate.constituency, candidate.votes);
-    }
-
-    // Test function only
-    /// @notice Returns the index of a constituency
-    /// @param constituencyName The name (bytes32) of the constituency to get the index of
-    /// @return constituencyIndex The index (uint) of the constituency in the constituency array
-    function getConstituencyIndex(bytes32 constituencyName)
-        external
-        view
-        constituencyMustExist(constituencyName)
-        returns (uint)
-    {
-        return constituencyIndexs[constituencyName];
-    }
-
-    // Test function only
-    /// @notice Returns the index of a constituency candidate
-    /// @param constituencyName The name (bytes32) of the constituency the candidate belong to
-    /// @param candidateName The name (bytes32) of the candidate to get the index of
-    function getCandidateIndex(bytes32 constituencyName, bytes32 candidateName)
-        external
-        view
-        constituencyMustExist(constituencyName)
-        candiateMustExist(constituencyName, candidateName)
-        returns (uint)
-    {
-        uint constituencyIndex = constituencyIndexs[constituencyName];
-
-        return constituencies[constituencyIndex].candidateIndexs[candidateName];
-    }
-
-    /// Test function only
-    /// @notice Returns the existance of a constituency
-    /// @param constituencyName The name (bytes32) of the constituency to check the existance of
-    /// @return constutuencyExistance Bool of the existance of the constituency
-    function getConstituencyExistance(bytes32 constituencyName)
-        external
-        view
-        returns (bool)
-    {
-        return constituencyExists[constituencyName];
     }
 
     // Voter Functions
@@ -477,45 +275,6 @@ contract FPTP {
         return true;
     }
 
-    // Potentially not needed if event emits work
-    /// @notice Retrieve a voters information
-    /// @param voterAddress The address of the voter to be retrieved
-    /// @return voted If the voter has voted yet or not
-    /// @return constituency The constituency of the voter
-    function getVoter(address voterAddress) 
-        external 
-        view
-        onlyAdmin 
-        voterMustExist(voterAddress) 
-        returns (bool voted, bytes32 constituency)
-    {
-        Voter storage voter = voters[voterIndexs[voterAddress]];
-        return (voter.voted, voter.constituency);
-    }
-
-    // Test function
-    /// @notice Retrieve the index of the voter in the voter index mapping
-    /// @param voterAddress The address of the voter to retrieve the index of
-    /// @return voterIndex The index of the voter in the voter index mapping
-    function getVoterIndex(address voterAddress)
-        external
-        view
-        onlyAdmin
-        voterMustExist(voterAddress)
-        returns (uint)
-    {
-        return voterIndexs[voterAddress];
-    }
-
-    function getVoterExistance(address voterAddress)
-        external
-        view
-        onlyAdmin
-        returns (bool)
-    {
-        return registeredVoters[voterAddress];
-    }
-
     /// @notice Cast a vote
     /// @param candidateName The name of the candidate that the voter intends to vote for
     function castVote(bytes32 candidateName)
@@ -550,18 +309,6 @@ contract FPTP {
         return true;
     }
 
-    // Potentially not needed if event emits work
-    /// @notice Retrieve the address of all voters in the election
-    /// @dev This is inefficient for large number of voters
-    function getAllVoters()
-        external
-        view
-        onlyAdmin
-        returns (address[] memory)
-    {
-        return voterAddresses;
-    }
-
     // Election management Functions
     /// @notice Start the election
     /// @dev Start the election by making the election started flag true
@@ -575,16 +322,6 @@ contract FPTP {
 
         emit ElectionStarted();
         return true;
-    }
-
-    /// @notice Get wether the election has started yet or not
-    /// @return electionStarted Bool of wether the election has started or not
-    function getElectionStartedStatus()
-        external
-        view
-        returns (bool)
-    {
-        return electionStarted;
     }
 
     /// @notice Calculate the winning candidate for each constituency
@@ -700,72 +437,4 @@ contract FPTP {
 
         return true;
     }
-
-    // Test function
-    /// @notice Get wether the election has ended yet or not
-    /// @return Bool of wether the election has ended yet or not
-    function getElectionEndedStatus()
-        external
-        view
-        returns (bool)
-    {
-        return electionEnded;
-    }
-
-    // Potentially not needed if event emits work
-    /// @notice Get the elected candidate of a constituency
-    /// @return name The name (bytes32) of the elected candidate
-    /// @return party The party (bytes32) of the elected candidate
-    function getConstituencyWinner(bytes32 constiteuncyName)
-        external
-        view
-        electionHasEnded
-        constituencyMustExist(constiteuncyName)
-        resultsHaveBeenCalculated
-        returns (bytes32, bytes32)
-    {
-        // Index of the consituency in the constituency array
-        uint constituencyIndex = constituencyIndexs[constiteuncyName];
-
-        // The current constituency data
-        Constituency storage constituency = constituencies[constituencyIndex];
-
-        Candidate storage electedCandidate = constituency.candidates[constituency.electedCandidateIndex];
-        return (electedCandidate.name, electedCandidate.party);
-    }
-
-    // // Can be reworked if events emit work
-    // /// @notice Get the winner of the election
-    // /// @return winningParty The name (bytes32) of the party with the most elected seats
-    // function getElectionWinner()
-    //     external
-    //     electionHasEnded
-    //     resultsHaveBeenCalculated
-    //     returns (bytes32)
-    // {
-    //     // Number of elected seats for the winning party
-    //     uint maxSeats = 0;
-    //     // Name of the party with the most elected seats
-    //     bytes32 winningParty = bytes32(0);
-
-    //     // Find the party with the most elected seats
-    //     for (uint i = 0; i < electionParties.length; i++) {
-    //         // Retrieve the current party informaiton
-    //         Party storage party = electionParties[i];
-
-    //         // Party has more elected seats than previous seen parties
-    //         if (party.electedSeats > maxSeats) {
-    //             // Record the number of elected seats
-    //             maxSeats = party.electedSeats;
-
-    //             // Record the name (bytes32) of the winning party
-    //             winningParty = party.name;
-    //         }
-    //     }
-
-    //     // Record the winning party of the election
-    //     emit ElectionWinner(winningParty);
-
-    //     return winningParty;
-    // }
 }
