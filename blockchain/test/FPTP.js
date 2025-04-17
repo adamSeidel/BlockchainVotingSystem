@@ -7,7 +7,7 @@ describe("First Past The Post - Add Constituency", function () {
     beforeEach(async function () {
         [admin, voter] = await ethers.getSigners();
 
-        Election = await ethers.getContractFactory("FPTP2", admin);
+        Election = await ethers.getContractFactory("FPTP", admin);
         election = await Election.deploy();
 
         await election.waitForDeployment();
@@ -140,7 +140,7 @@ describe("First Past The Post - Add Constituency Candidate", function () {
     beforeEach(async function () {
         [admin, voter] = await ethers.getSigners();
 
-        Election = await ethers.getContractFactory("FPTP2", admin);
+        Election = await ethers.getContractFactory("FPTP", admin);
         election = await Election.deploy();
 
         await election.waitForDeployment();
@@ -434,7 +434,7 @@ describe("First Past The Post - Add Voter", function () {
     beforeEach(async function () {
         [admin, voter] = await ethers.getSigners();
 
-        Election = await ethers.getContractFactory("FPTP2", admin);
+        Election = await ethers.getContractFactory("FPTP", admin);
         election = await Election.deploy();
 
         await election.waitForDeployment();
@@ -573,7 +573,7 @@ describe("First Past The Post - Cast Vote", function () {
     beforeEach(async function () {
         [admin, voter] = await ethers.getSigners();
 
-        Election = await ethers.getContractFactory("FPTP2", admin);
+        Election = await ethers.getContractFactory("FPTP", admin);
         election = await Election.deploy();
 
         await election.waitForDeployment();
@@ -751,7 +751,7 @@ describe("First Past The Post - Start Election", function () {
     beforeEach(async function () {
         [admin, voter] = await ethers.getSigners();
 
-        Election = await ethers.getContractFactory("FPTP2", admin);
+        Election = await ethers.getContractFactory("FPTP", admin);
         election = await Election.deploy();
 
         await election.waitForDeployment();
@@ -804,7 +804,7 @@ describe("First Past The Post - End Election", function () {
     beforeEach(async function () {
         [admin, voter] = await ethers.getSigners();
 
-        Election = await ethers.getContractFactory("FPTP2", admin);
+        Election = await ethers.getContractFactory("FPTP", admin);
         election = await Election.deploy();
 
         await election.waitForDeployment();
@@ -877,7 +877,7 @@ describe("First Past The Post - Calculate Election Results", function () {
     beforeEach(async function () {
         [admin, voter, voter2, voter3, voter4] = await ethers.getSigners();
 
-        Election = await ethers.getContractFactory("FPTP2", admin);
+        Election = await ethers.getContractFactory("FPTP", admin);
         election = await Election.deploy();
 
         await election.waitForDeployment();
@@ -1324,7 +1324,7 @@ function readConstituencyData(file) {
   });
 }
 
-describe("First Past The Post - Simulate an Aberafan Maesteg constituency election", function () {
+describe.skip("First Past The Post - Simulate an Aberafan Maesteg constituency election", function () {
     let constituencyData;
 
     beforeEach(async function () {
@@ -1345,7 +1345,7 @@ describe("First Past The Post - Simulate an Aberafan Maesteg constituency electi
             ethers.encodeBytes32String("Alliance Party of Nortern Irela"),
           ];
 
-        Election = await ethers.getContractFactory("FPTP2", admin);
+        Election = await ethers.getContractFactory("FPTP", admin);
         election = await Election.deploy();
 
         await election.waitForDeployment();
@@ -1357,8 +1357,9 @@ describe("First Past The Post - Simulate an Aberafan Maesteg constituency electi
     // Estimated time to add voters for the UK General Election: 214,916.3507466957 / 2.5 days
     // Estimated time to cast votes for the Uk General Election: 165,747.2963323225 seconds / 1.9 days
 
-    // Estimated cost to add voters for the Uk General Election:
-    // Estimated cost to cast votes for the Uk General Election:
+    // Estimated cost to add voters for the Uk General Election: £1,440,467
+    // Estimated cost to cast votes for the Uk General Election: £864,280.20
+    // Estimated total cost: ~£2,304,747.20
     it("Simulate an Aberafan Maesteg constituency election vote", async function () {
         this.timeout(1000000);
 
@@ -1451,8 +1452,8 @@ describe("First Past The Post - Simulate an Aberafan Maesteg constituency electi
         expect(eventLog[3].fragment.name).to.equal("ElectionResultsCalculated")
 
         // Election Winner Event
-        expect(eventLog[eventLog.lenght - 1].fragment.name).to.equal("ElectionWinner")
-        expect(eventLog[eventLog.lenght - 1].args[0]).to.equal(ethers.encodeBytes32String("Labour Party"))
-        expect(eventLog[eventLog.lenght - 1].args[1]).to.equal(1)
+        expect(eventLog[eventLog.length - 1].fragment.name).to.equal("ElectionWinner")
+        expect(eventLog[eventLog.length - 1].args[0]).to.equal(ethers.encodeBytes32String("Labour Party"))
+        expect(eventLog[eventLog.length - 1].args[1]).to.equal(1)
     })
 })

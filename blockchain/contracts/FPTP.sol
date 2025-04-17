@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 /// @title First Past the Post election contract
 /// @author Adam G. Seidel
-contract FPTP2 {
+contract FPTP {
     // Voter structure
     struct Voter {
         // Flag to indicate if the voter has voted yet or not
@@ -47,83 +47,39 @@ contract FPTP2 {
     }
 
     // Variables
-    // Address of Election Admin
     address public admin;
 
-    // Flag to indicate if the election has started or not
+    // Flags
     bool electionStarted;
-
-    // Flag to indicate if the election has ended or not
     bool electionEnded;
-    
-    // Flag to indicate if the election results have been calculated yet
-    // or not
     bool resultsCalculated;
 
-    // Array of election Constituencies
+    // Arrays
+    Voter[] public voters;
+    address[] public voterAddresses;
     Constituency[] public constituencies;
-
-    // Array of election parties
     Party[] public electionParties;
 
-    // Array of election voters
-    Voter[] public voters;
-
-    // Array of voter addresses
-    address[] public voterAddresses;
-
     // Mappings
-    // Constituency name (bytes32) to index (uint) mapping
     mapping (bytes32 => uint) public constituencyIndexs;
-
-    // Constituency name (bytes32) to existance (bool) mapping
     mapping (bytes32 => bool) public constituencyExists;
-
-    // Voter address to index (uint) mapping
     mapping (address => uint) public voterIndexs;
-
-    // Voter address to existance (bool) mapping
     mapping (address => bool) public registeredVoters;
-
-    // Party name (bytes32) to existance (bool) mapping
+    mapping (bytes32 => uint) public partyIndexs;
     mapping (bytes32 => bool) public partyExists;
 
-    // Party name (bytes32) to index (uint) mapping
-    mapping (bytes32 => uint) public partyIndexs;
-
     // Events
-    // Constituency added event
-    event ConstituencyAdded(bytes32 constituencyName);
-
-    // Candidate added to constituency event
-    event CandidateAdded(bytes32 candidateName, bytes32 party, bytes32 constituencyName);
-
-    // Voter added to election event
-    event VoterAdded(address voterAddress, bytes32 constituencyName);
-
-    // Vote cast event
-    event VoteCast(address voterAddress);
-
-    // Constituency Winner calculated event
-    event ConstituencyWinner(bytes32 constituencyName, bytes32 winningCandidateName, bytes32 winningCandidatePartyName);
-
-    // All constituency winners calculated event
-    event AllConstituencyWinnersCalculated();
-
-    // Overall election results calculated event
-    event ElectionResultsCalculated();
-
-    // Overall election winner event
-    event ElectionWinner(bytes32 electionWinner, uint electedSeats);
-
-    // Party results event
-    event PartyResults(bytes32 party, uint electedSeats);
-
-    // Election started event
     event ElectionStarted();
-
-    // Electin ended event
     event ElectionEnded();
+    event ConstituencyAdded(bytes32 constituencyName);
+    event CandidateAdded(bytes32 candidateName, bytes32 party, bytes32 constituencyName);
+    event VoterAdded(address voterAddress, bytes32 constituencyName);
+    event VoteCast(address voterAddress);
+    event ConstituencyWinner(bytes32 constituencyName, bytes32 winningCandidateName, bytes32 winningCandidatePartyName);
+    event AllConstituencyWinnersCalculated();
+    event ElectionResultsCalculated();
+    event PartyResults(bytes32 party, uint electedSeats);
+    event ElectionWinner(bytes32 electionWinner, uint electedSeats);
 
     // Modifiers
     // Admin only access modifier
