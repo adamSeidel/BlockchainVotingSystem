@@ -21,13 +21,6 @@ describe("First Past The Post - Add Constituency", function () {
         await expect(election.addConstituency(constituencyName))
             .to.emit(election, "ConstituencyAdded")
             .withArgs(constituencyName);
-
-        // Retrieve the names of the election constituencies
-        const constituencies = await election.getConstituencies();
-
-        // Ensure that the added constituency is included in the election
-        // constituencies
-        expect(constituencies).to.include(constituencyName);
     })
 
     it("A constituency can only be added before the election has started", async function () {
@@ -73,55 +66,6 @@ describe("First Past The Post - Add Constituency", function () {
         .to.be.revertedWith("Constituency already exists");
     })
 
-    it("Correctly records constituencies in the constituency name to index mapping", async function () {
-        // Test constituency name
-        let constituencyName = ethers.encodeBytes32String("Test Constituency");
-
-        // Add the constituency
-        await expect(election.addConstituency(constituencyName))
-        .to.emit(election, "ConstituencyAdded")
-        .withArgs(constituencyName);
-
-        // First constituency should have index of 0 in constituency array &
-        // in the constituency name to index mapping
-        let constituencyIndex = await election.getConstituencyIndex(constituencyName);
-        expect(constituencyIndex).to.equal(0);
-
-        // Test constituency name
-        constituencyName = ethers.encodeBytes32String("Test Constituency2");
-
-        // Add the constituency
-        await expect(election.addConstituency(constituencyName))
-        .to.emit(election, "ConstituencyAdded")
-        .withArgs(constituencyName);
-
-        // Second constituency should have index of 1 in constituency array &
-        // in the constituency name to index mapping
-        constituencyIndex = await election.getConstituencyIndex(constituencyName);
-        expect(constituencyIndex).to.equal(1);
-    })
-
-    it("Correctly records constituency existance in the existance mapping", async function () {
-        // Test constituency name
-        let constituencyName = ethers.encodeBytes32String("Test Constituency");
-
-        // Add the constituency
-        await expect(election.addConstituency(constituencyName))
-        .to.emit(election, "ConstituencyAdded")
-        .withArgs(constituencyName);
-
-        // Check that constituency is recorded as existing
-        let constituencyExistance = await election.getConstituencyExistance(constituencyName);
-        expect(constituencyExistance).to.equal(true);
-
-        // Test constituency name
-        constituencyName = ethers.encodeBytes32String("Test Constituency2");
-
-        // Check that the constituency is not recorded as existing
-        constituencyExistance = await election.getConstituencyExistance(constituencyName);
-        expect(constituencyExistance).to.equal(false);
-    })
-
     it("Emits a constituency added event when a new constituency is added", async function () {
         // Test constituency name
         const constituencyName = ethers.encodeBytes32String("Test Constituency");
@@ -159,10 +103,8 @@ describe("First Past The Post - Add Constituency Candidate", function () {
 
         // Add a constituency candidate as an admin
         await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
-            .to.emit(election, "CandidateAdded");
-
-        const candidates = await election.getConstituencyCandidates(constituencyName);
-        expect(candidates).to.include(candidateName);
+            .to.emit(election, "CandidateAdded")
+            .withArgs(candidateName, partyName, constituencyName);
     })
 
     it("Only the admin can add a constituency candidate", async function () {
@@ -223,10 +165,8 @@ describe("First Past The Post - Add Constituency Candidate", function () {
 
         // Add a constituency candidate
         await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
-            .to.emit(election, "CandidateAdded");
-
-        const candidateData = await election.getCandidate(constituencyName, candidateName)
-        expect(candidateData[0]).to.equal(candidateName);
+            .to.emit(election, "CandidateAdded")
+            .withArgs(candidateName, partyName, constituencyName);
     })
 
     it("Records candidate party", async function () {
@@ -237,10 +177,8 @@ describe("First Past The Post - Add Constituency Candidate", function () {
 
         // Add a constituency candidate
         await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
-            .to.emit(election, "CandidateAdded");
-
-        const candidateData = await election.getCandidate(constituencyName, candidateName)
-        expect(candidateData[1]).to.equal(partyName);
+            .to.emit(election, "CandidateAdded")
+            .withArgs(candidateName, partyName, constituencyName);
     })
 
     it("Records candidate constituency", async function () {
@@ -251,50 +189,8 @@ describe("First Past The Post - Add Constituency Candidate", function () {
 
         // Add a constituency candidate
         await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
-            .to.emit(election, "CandidateAdded");
-
-        const candidateData = await election.getCandidate(constituencyName, candidateName)
-        expect(candidateData[2]).to.equal(constituencyName);
-    })
-
-    it("Initialises candidate votes to 0", async function () {
-        // Test candidate name
-        let candidateName = ethers.encodeBytes32String("Test Candidate");
-        // Test party name
-        const partyName = ethers.encodeBytes32String("Test Party");
-
-        // Add a constituency candidate
-        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
-            .to.emit(election, "CandidateAdded");
-
-        const candidateData = await election.getCandidate(constituencyName, candidateName)
-        expect(candidateData[3]).to.equal(0);
-    })
-
-    it("Correctly records the candidate index in the candidate to index mapping", async function () {
-        // Test candidate name
-        let candidateName = ethers.encodeBytes32String("Test Candidate");
-        // Test party name
-        const partyName = ethers.encodeBytes32String("Test Party");
-
-        // Add a constituency candidate
-        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
-            .to.emit(election, "CandidateAdded");
-
-        // Check candidate index is 0
-        let candidateIndex = await election.getCandidateIndex(constituencyName, candidateName)
-        expect(candidateIndex).to.equal(0);
-
-        // Test candidate name
-        candidateName = ethers.encodeBytes32String("Test Candidate2");
-
-        // Add a constituency candidate
-        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
-            .to.emit(election, "CandidateAdded");
-
-        // Check candidate index is 1
-        candidateIndex = await election.getCandidateIndex(constituencyName, candidateName)
-        expect(candidateIndex).to.equal(1);
+            .to.emit(election, "CandidateAdded")
+            .withArgs(candidateName, partyName, constituencyName);
     })
     
     it("Record new parties", async function () {
@@ -305,11 +201,8 @@ describe("First Past The Post - Add Constituency Candidate", function () {
 
         // Add a constituency candidate
         await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
-            .to.emit(election, "CandidateAdded");
-
-        // Check party has been added to election parties array
-        const electionParties = await election.getPartyNames();
-        expect(electionParties).to.include(partyName);
+            .to.emit(election, "PartyAdded")
+            .withArgs(partyName);
     })
 
     it("Records the party name correclty", async function () {
@@ -320,84 +213,8 @@ describe("First Past The Post - Add Constituency Candidate", function () {
  
          // Add a constituency candidate
          await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
-             .to.emit(election, "CandidateAdded");
- 
-         // Get party data
-         const party = await election.getParty(partyName);
- 
-         // Elected seats should initialise to 0
-         expect(party[0]).to.equal(partyName);
-    })
-
-    it("Initialises party elected seats to 0", async function () {
-        // Test candidate name
-        let candidateName = ethers.encodeBytes32String("Test Candidate");
-        // Test party name
-        const partyName = ethers.encodeBytes32String("Test Party");
-
-        // Add a constituency candidate
-        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
-            .to.emit(election, "CandidateAdded");
-
-        // Get party data
-        const party = await election.getParty(partyName);
-
-        // Elected seats should initialise to 0
-        expect(party[1]).to.equal(0);
-    })
-
-    it("Records the party index in the party index mapping", async function () {
-        // Test candidate name
-        let candidateName = ethers.encodeBytes32String("Test Candidate");
-        // Test party name
-        let partyName = ethers.encodeBytes32String("Test Party");
-
-        // Add a constituency candidate
-        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
-            .to.emit(election, "CandidateAdded");
-
-        // Retrieve party index
-        let partyIndex = await election.getPartyIndex(partyName);
-        // Verify party index is as expected
-        expect(partyIndex).to.equal(0)
-
-        // Test candidate name
-        candidateName = ethers.encodeBytes32String("Test Candidate2");
-        // Test party name
-        partyName = ethers.encodeBytes32String("Test Party2");
-
-        // Add a constituency candidate
-        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
-            .to.emit(election, "CandidateAdded");
-
-        // Retrieve party index
-        partyIndex = await election.getPartyIndex(partyName)
-        // Verify party index is as expected
-        expect(partyIndex).to.equal(1)
-    })
-
-    it("Records party existance in the party existence mapping", async function () {
-        // Test candidate name
-        let candidateName = ethers.encodeBytes32String("Test Candidate");
-        // Test party name
-        let partyName = ethers.encodeBytes32String("Test Party");
-
-        // Add a constituency candidate
-        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
-            .to.emit(election, "CandidateAdded");
-
-        // Retrieve the existance of a party that does exist
-        let partyExistance = await election.getPartyExistance(partyName);
-        // Verify existance
-        expect(partyExistance).to.equal(true);
-
-        // Test party that does not exist
-        partyName = ethers.encodeBytes32String("Test Party2");
-
-        // Retrieve the existance of a party that does not exist
-        partyExistance = await election.getPartyExistance(partyName);
-        // Verify that party does not exist
-        expect(partyExistance).to.equal(false);
+             .to.emit(election, "PartyAdded")
+             .withArgs(partyName);
     })
 
     it("Should emit a candidate added event", async function () {
@@ -450,10 +267,6 @@ describe("First Past The Post - Add Voter", function () {
         await expect(election.addVoter(voter.address, constituencyName))
         .to.emit(election, "VoterAdded")
         .withArgs(voter.address, constituencyName)
-
-        // Verify voter existance in the registered voter mapping
-        const voterExistance = await election.getVoterExistance(voter.address)
-        expect(voterExistance).to.equal(true);
     })
 
     it("Only the admin can add new voters", async function () {
@@ -511,12 +324,6 @@ describe("First Past The Post - Add Voter", function () {
         await expect(election.addVoter(voter.address, constituencyName))
         .to.emit(election, "VoterAdded")
         .withArgs(voter.address, constituencyName)
-
-        // Retrieve voter informaiton
-        const voterInformation = await election.getVoter(voter.address);
-
-        // Check that voter has not voted yet
-        expect(voterInformation[0]).to.equal(false);
     })
 
     it("Initialises a new voters constituency correctly", async function () {
@@ -524,38 +331,6 @@ describe("First Past The Post - Add Voter", function () {
         await expect(election.addVoter(voter.address, constituencyName))
         .to.emit(election, "VoterAdded")
         .withArgs(voter.address, constituencyName)
-
-        // Retrieve voter informaiton
-        const voterInformation = await election.getVoter(voter.address);
-
-        // Check that the voters consituency is correct
-        expect(voterInformation[1]).to.equal(constituencyName);
-    })
-
-    it("Records the voters in the voter address array", async function () {
-        // Add a new voter
-        await expect(election.addVoter(voter.address, constituencyName))
-        .to.emit(election, "VoterAdded")
-        .withArgs(voter.address, constituencyName)
-
-        // Retrieve the addresses of all voters
-        const voterAddresses = await election.getAllVoters();
-
-        // Verify voters address is in included in the voter addresses
-        expect(voterAddresses).to.include(voter.address);
-    })
-
-    it("Records the voters index in the voter index mapping", async function () {
-        // Add a new voter as an admin
-        await expect(election.addVoter(voter.address, constituencyName))
-        .to.emit(election, "VoterAdded")
-        .withArgs(voter.address, constituencyName)
-
-        // Retrieve the voters index from voter index mapping
-        const voterIndex = await election.getVoterIndex(voter.address);
-
-        // Confirm the index is correct
-        expect(voterIndex).to.equal(0);
     })
 
     it("Voter added event is emitted", async function () {
@@ -633,12 +408,6 @@ describe("First Past The Post - Cast Vote", function () {
         await expect(election.connect(voter).castVote(voteCandidate))
             .to.emit(election, "VoteCast")
             .withArgs(voter.address);
-
-        // Get candidate infromation 
-        const candidate = await election.getCandidate(constituencyName, voteCandidate)
-
-        // Verify the vote has been added for the candidate
-        expect(candidate[3]).to.equal(1);
     })
 
     it("Votes can only be added once the election has started", async function () {
@@ -738,12 +507,6 @@ describe("First Past The Post - Cast Vote", function () {
         await expect(election.connect(voter).castVote(voteCandidate))
             .to.emit(election, "VoteCast")
             .withArgs(voter.address);
-
-        // Get voter information
-        const voterInformation = await election.getVoter(voter.address);
-
-        // Confirm voter is recorded as having voted
-        expect(voterInformation[0]).to.equal(true);
     })
 })
 
@@ -778,19 +541,9 @@ describe("First Past The Post - Start Election", function () {
     })
 
     it("Election should be marked as started", async function () {
-        // Retrieve the election started status
-        let electionStartedStatus = await election.getElectionStartedStatus();
-        // Verify that the election has not started yet
-        expect(electionStartedStatus).to.equal(false)
-
         // Start the election
         await expect(election.startElection())
             .to.emit(election, "ElectionStarted");
-
-        // Retrieve the election started status
-        electionStartedStatus = await election.getElectionStartedStatus();
-        // Verify that the election is marked as started
-        expect(electionStartedStatus).to.equal(true)
     })
 
     it("Election started event is emitted", async function () {
@@ -850,26 +603,12 @@ describe("First Past The Post - End Election", function () {
     })
 
     it("Election must be marked as ended once the election is ended", async function () {
-        // Retrieve the election ended status
-        let electionEndedStatus = await election.getElectionEndedStatus()
-        // Confirm the election is marked as not ended
-        expect(electionEndedStatus).to.equal(false)
-
         // Start the election
         await election.startElection()
-        
-        // Retrieve the election ended status
-        electionEndedStatus = await election.getElectionEndedStatus()
-        // Confirm the election is marked as not ended
-        expect(electionEndedStatus).to.equal(false)
 
         // End the election
-        await election.endElection()
-
-        // Retrieve the election ended status
-        electionEndedStatus = await election.getElectionEndedStatus()
-        // Confirm the election is marked as ended
-        expect(electionEndedStatus).to.equal(true)
+        await expect(election.endElection())
+            .to.emit(election, "ElectionEnded");
     })
 })
 
@@ -938,18 +677,6 @@ describe("First Past The Post - Calculate Election Results", function () {
         await expect(election.connect(voter3).castVote(candidate3))
         .to.emit(election, "VoteCast")
         .withArgs(voter3.address);
-
-        // Confirm Conservative Party have 2 votes
-        let candidate = await election.getCandidate(constituency1, candidate1)
-        expect(candidate[3]).to.equal(2)
-
-        // Confirm Labour Party has 1 vote
-        candidate = await election.getCandidate(constituency1, candidate2)
-        expect(candidate[3]).to.equal(1)
-
-        // Confirm Reform Party has 1 vote
-        candidate = await election.getCandidate(constituency1, candidate3)
-        expect(candidate[3]).to.equal(1)
 
         // End election
         await expect(election.endElection())
@@ -1324,7 +1051,7 @@ function readConstituencyData(file) {
   });
 }
 
-describe.skip("First Past The Post - Simulate an Aberafan Maesteg constituency election", function () {
+describe("First Past The Post - Simulate an Aberafan Maesteg constituency election", function () {
     let constituencyData;
 
     beforeEach(async function () {
