@@ -1,4 +1,5 @@
 /// SPDX-License-Idenfifier: GPL-3.0
+// https://www.electoral-reform.org.uk/voting-systems/types-of-voting-system/first-past-the-post/
 pragma solidity ^0.8.0;
 
 /// @title First Past the Post election contract
@@ -16,7 +17,7 @@ contract FPTP {
     struct Party {
         // Name of the party
         bytes32 name;
-        // Number of seats for that party
+        // Number of elected seats for that party
         uint electedSeats;
     }
 
@@ -47,32 +48,33 @@ contract FPTP {
     }
 
     // Variables
-    address public admin;
+    address private admin;
 
     // Flags
-    bool electionStarted;
-    bool electionEnded;
-    bool resultsCalculated;
+    bool private electionStarted;
+    bool private electionEnded;
+    bool private resultsCalculated;
 
     // Arrays
-    Voter[] public voters;
-    address[] public voterAddresses;
-    Constituency[] public constituencies;
-    Party[] public electionParties;
+    Voter[] private voters;
+    address[] private voterAddresses;
+    Constituency[] private constituencies;
+    Party[] private electionParties;
 
     // Mappings
-    mapping (bytes32 => uint) public constituencyIndexs;
-    mapping (bytes32 => bool) public constituencyExists;
-    mapping (address => uint) public voterIndexs;
-    mapping (address => bool) public registeredVoters;
-    mapping (bytes32 => uint) public partyIndexs;
-    mapping (bytes32 => bool) public partyExists;
+    mapping (bytes32 => uint) private constituencyIndexs;
+    mapping (bytes32 => bool) private constituencyExists;
+    mapping (address => uint) private voterIndexs;
+    mapping (address => bool) private registeredVoters;
+    mapping (bytes32 => uint) private partyIndexs;
+    mapping (bytes32 => bool) private partyExists;
 
     // Events
     event ElectionStarted();
     event ElectionEnded();
     event ConstituencyAdded(bytes32 constituencyName);
     event CandidateAdded(bytes32 candidateName, bytes32 party, bytes32 constituencyName);
+    event PartyAdded(bytes32 partyName);
     event VoterAdded(address voterAddress, bytes32 constituencyName);
     event VoteCast(address voterAddress);
     event ConstituencyWinner(bytes32 constituencyName, bytes32 winningCandidateName, bytes32 winningCandidatePartyName);
@@ -84,34 +86,43 @@ contract FPTP {
     // Modifiers
     modifier onlyAdmin()  {
         require(msg.sender == admin, 
-        "Only the election admin can perform this action");
+            "Only the election admin can perform this action");
         _;
     }
     modifier electionHasStarted() {
         require(electionStarted,
-        "The election has not started so it is not possible to perform this action");
+            "The election has not started so it is not possible to perform this action");
         _;
     }
     modifier electionHasNotStarted() {
         require(!electionStarted, 
-        "The election has already started so it is not possible to perform this action");
+            "The election has already started so it is not possible to perform this action");
         _;
     }
     modifier electionHasEnded() {
-        require(electionEnded, "The election has ended yet so it is not possible to perform this action");
+        require(electionEnded,
+            "The election has ended so it is not possible to perform this action");
         _;
     }
     modifier electionHasNotEnded() {
         require(!electionEnded,
-        "The election has already ended so it is not possible to perform this action");
+            "The election has already ended so it is not possible to perform this action");
         _;
     }
-    modifier resultsHaveBeenCalculated() {
-        require(resultsCalculated, "The election results have not been calculated so it is not possible to perform this action");
+    modifier voterMustExist(address voterAddress) {
+        require(registeredVoters[voterAddress],
+            "This voter is not registered to vote");
         _;
     }
-    modifier resultsHaveNotBeenCalculated() {
-        require(!resultsCalculated, "The election results have already been calculated so it is not possible to perform this action");
+    modifier voterMustNotExist(address voterAddress) {
+        require(!registeredVoters[voterAddress], 
+            "This voter is already registered to vote");
+        _;
+    }
+    modifier voterHasNotVoted(address voterAddress) {
+        Voter storage voter = voters[voterIndexs[msg.sender]];
+        // Ensure the voter has not yet voted
+        require(!voter.voted, "You have already voted");
         _;
     }
     modifier constituencyMustExist(bytes32 constituencyName) {
@@ -119,16 +130,8 @@ contract FPTP {
         _;
     }
     modifier constituencyMustNotExist(bytes32 constituencyName) {
-        require(!constituencyExists[constituencyName], "Constituency already exists");
-        _;
-    }
-    modifier voterMustExist(address voterAddress) {
-        require(registeredVoters[voterAddress], "This voter is not registered to vote");
-        _;
-    }
-    modifier voterMustNotExist(address voterAddress) {
-        require(!registeredVoters[voterAddress], 
-            "This voter is already registered to vote");
+        require(!constituencyExists[constituencyName], 
+            "Constituency already exists");
         _;
     }
     modifier candiateMustExist(bytes32 constituencyName, bytes32 candidateName) {
@@ -143,8 +146,14 @@ contract FPTP {
             "This candidate already exists");
         _;
     }
-    modifier partyMustExist(bytes32 partyName) {
-        require(partyExists[partyName], "This party does not exist");
+        modifier resultsHaveBeenCalculated() {
+        require(resultsCalculated,
+            "The election results have not been calculated so it is not possible to perform this action");
+        _;
+    }
+    modifier resultsHaveNotBeenCalculated() {
+        require(!resultsCalculated, 
+            "The election results have already been calculated so it is not possible to perform this action");
         _;
     }
 
@@ -154,7 +163,7 @@ contract FPTP {
         admin = msg.sender;
         // Initialise the election started flag
         electionStarted = false;
-        // Initialise the elected ended flag
+        // Initialise the election ended flag
         electionEnded = false;
         // Initialise the results calculated flag
         resultsCalculated = false;
@@ -170,15 +179,17 @@ contract FPTP {
         constituencyMustNotExist(constituencyName)
         returns (bool)
     {
+        // Ensure the constituency name is not empty
+        require(constituencyName != bytes32(0), "Constituency name cannot be empty");
+
         // Add the new constituency
         constituencies.push();
         Constituency storage newConstituency = constituencies[constituencies.length - 1];
+        
         // Record the name of the new constituency
         newConstituency.name = constituencyName;
-
-        // Record the index of the constiteuncy in the constitecy indexs mapping
+        // Record the index of the constiteuncy in the constituency indexs mapping
         constituencyIndexs[constituencyName] = constituencies.length - 1;
-
         // Record that the constituency exists in the constituency existance mapping
         constituencyExists[constituencyName] = true;
 
@@ -189,8 +200,8 @@ contract FPTP {
 
     /// @notice Add a new candidate to a constituency
     /// @param candidateName The name (bytes32) of the candidate to be added
-    /// @param candidateParty The party (bytes32) that the candidate to be added represents
-    /// @param candidateConstituency The name of the constituency (bytes32) that the candidate to be added is standing in
+    /// @param candidateParty The party (bytes32) that the new candidate represents
+    /// @param candidateConstituency The name of the constituency (bytes32) that the new candidate is standing in
     function addConstituencyCandidate(bytes32 candidateName, bytes32 candidateParty, bytes32 candidateConstituency)
         external
         onlyAdmin 
@@ -206,45 +217,51 @@ contract FPTP {
         constituencies[constituencyIndex].candidates.push(Candidate({
             // Record the name of the new candidate
             name: candidateName,
-            // Record the party that the new candidte represents
+            // Record the party that the new candidate represents
             party: candidateParty,
             // Record the constituency that the new candidate is standing in
             constituency: candidateConstituency,
-            // Initialise the number of votes for the new candidate
+            // Initialise the number of votes for the new candidate to o
             votes: 0
         }));
 
         // Record the existance of a new candidate for this constituency
         constituencies[constituencyIndex].candidateExistance[candidateName] = true;
 
-        // Record the index of the new candidate in the constituencies candidates array
+        // Index of the candidate in the constituencies candidates array
         uint candidateIndex = constituencies[constituencyIndex].candidates.length - 1;
+        // Record the index of the new candidate in the constituencies candidates array
         constituencies[constituencyIndex].candidateIndexs[candidateName] = candidateIndex;
-
-        // Record a new party if the party is new to this election
-        if (!partyExists[candidateParty]) {
-            // Record new party in party array
-            electionParties.push(Party({
-                name: candidateParty,
-                electedSeats: 0
-            }));
-            // Record the party index in the party array
-            partyIndexs[candidateParty] = electionParties.length - 1;
-            // Record party existance in the mapping
-            partyExists[candidateParty] = true;
-
-            // Party added event needed
-        }
 
         // Record that a new candidate has been added
         emit CandidateAdded(candidateName, candidateParty, candidateConstituency);
+
+        // Record a new party if the party is new to this election
+        if (!partyExists[candidateParty]) {
+            // Record new party in the party array
+            electionParties.push(Party({
+                // Record the name of the new party
+                name: candidateParty,
+                // Initialise the number of elected seats for the new party to 0
+                electedSeats: 0
+            }));
+
+            // Record the party index in the party index mapping
+            partyIndexs[candidateParty] = electionParties.length - 1;
+            // Record party existance in the party existance mapping
+            partyExists[candidateParty] = true;
+
+            // Record that a new party has been added
+            emit PartyAdded(candidateParty);
+        }
+
         return true;
     }
 
     // Voter Functions
     /// @notice Add a new voter to the election
-    /// @param voterAddress The address of the voter to be added
-    /// @param voterConstituency The constituency that the voter is eligible to vote in
+    /// @param voterAddress The address of the new voter
+    /// @param voterConstituency The constituency that the new voter is eligible to vote in
     function addVoter(address voterAddress, bytes32 voterConstituency) 
         external
         onlyAdmin
@@ -253,7 +270,7 @@ contract FPTP {
         constituencyMustExist(voterConstituency)
         returns (bool)
     {
-        // Add the new voter
+        // Add the new voter to the voters array
         voters.push(Voter({
             // Record that the voter has not yet voted
             voted: false,
@@ -272,6 +289,7 @@ contract FPTP {
 
         // Record that a new voter has been added
         emit VoterAdded(voterAddress, voterConstituency);
+
         return true;
     }
 
@@ -283,13 +301,11 @@ contract FPTP {
         electionHasNotEnded
         candiateMustExist(voters[voterIndexs[msg.sender]].constituency, candidateName)
         voterMustExist(msg.sender)
+        voterHasNotVoted(msg.sender)
         returns (bool)
     {
         // Retrieve the voters information
         Voter storage voter = voters[voterIndexs[msg.sender]];
-
-        // Ensure the voter has not yet voted
-        require(!voter.voted, "You have already voted");
 
         // Retrieve the constituency information
         Constituency storage constituency = constituencies[constituencyIndexs[voter.constituency]];
@@ -303,24 +319,26 @@ contract FPTP {
         // Record that the voter has now voted
         voter.voted = true;
 
-        // Record that the vote has been cast
+        // Record that the voter has cast their vote
         emit VoteCast(msg.sender);
         
         return true;
     }
 
-    // Election management Functions
+    // Election management functions
     /// @notice Start the election
-    /// @dev Start the election by making the election started flag true
     function startElection() 
         external 
         onlyAdmin 
         electionHasNotStarted
         returns (bool)
     {
+        // Set the election started flag
         electionStarted = true;
 
+        // Record that the election has started
         emit ElectionStarted();
+
         return true;
     }
 
@@ -388,7 +406,7 @@ contract FPTP {
             electionParties[partyIndex].electedSeats += 1;
         }
 
-        // Change the results calculated flag
+        // Record that the election results have been calculated
         resultsCalculated = true;
 
         // Record that the election results have been calculated
@@ -419,7 +437,6 @@ contract FPTP {
     }
 
     /// @notice End the election
-    /// @dev End the election by making the election ended flag true
     function endElection()
         external
         onlyAdmin
@@ -430,6 +447,7 @@ contract FPTP {
         // End the election
         electionEnded = true;
 
+        // Record that the election has ended
         emit ElectionEnded();
 
         // Calculate the results of the election

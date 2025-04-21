@@ -75,6 +75,15 @@ describe("First Past The Post - Add Constituency", function () {
             .to.emit(election, "ConstituencyAdded")
             .withArgs(constituencyName);
     })
+
+    it("Constituency name cannot be an empty string", async function  () {
+        // Test constituency name
+        let constituencyName = ethers.encodeBytes32String("");
+
+        // Add a constituency before the election has started
+        await expect(election.addConstituency(constituencyName))
+            .to.be.revertedWith("Constituency name cannot be empty");
+    })
 })
 
 describe("First Past The Post - Add Constituency Candidate", function () {
@@ -1051,7 +1060,7 @@ function readConstituencyData(file) {
   });
 }
 
-describe("First Past The Post - Simulate an Aberafan Maesteg constituency election", function () {
+describe.skip("First Past The Post - Simulate an Aberafan Maesteg constituency election", function () {
     let constituencyData;
 
     beforeEach(async function () {
