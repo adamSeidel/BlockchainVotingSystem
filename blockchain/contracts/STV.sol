@@ -2,6 +2,9 @@
 // https://www.electoral-reform.org.uk/latest-news-and-research/publications/how-to-conduct-an-election-by-the-single-transferable-vote-3rd-edition/
 pragma solidity ^0.8.0;
 
+// *** Used for debugging ***
+import "hardhat/console.sol";
+
 /// @title Single Transferable Vote election contract
 /// @author Adam G. Seidel
 contract STV {
@@ -344,7 +347,7 @@ contract STV {
             candidateRanking: new bytes32[](0),
             // Initialise the index pointing to the candidate in their ranking
             // currently recieving their vote
-            voteIndex: 0
+            voteIndex: type(uint).max
         }));
 
         // Record the voters address
@@ -426,200 +429,256 @@ contract STV {
         return true;
     }
 
-    // /// @notice Calculate the winning candidate for each constituency
-    // function calculateConstituencyWinners()
-    //     internal
-    //     onlyAdmin
-    //     electionHasEnded
-    //     resultsHaveNotBeenCalculated
-    // {
-    //     for (uint i = 0; i < constituencies.length; i++) {
-    //         // Retrieve the current constituencies data
-    //         Constituency storage constituency = constituencies[i];
+    /// @notice Calculate the winning candidate for each constituency
+    function calculateConstituencyWinners()
+        internal
+        onlyAdmin
+        electionHasEnded
+        resultsHaveNotBeenCalculated
+    {
+        // Calculate the elected candidates in each of the constituencies
+        for (uint i = 0; i < constituencies.length; i++) {
+            // Retrieve the current constituencies data
+            Constituency storage constituency = constituencies[i];
 
-    //         // Number of elected candidates in the constituency
-    //         uint numberOfElectedCandidates = 0;
+            // Number of elected candidates in the constituency
+            uint numberOfElectedCandidates = 0;
 
-    //         // Droop Quota
-    //         uint droopQuota = (constituency.numberOfVotes / (constituency.numberOfSeats + 1));
+            // Number of eliminated candidates in the constituency
+            uint numberOfEliminatedCandidates = 0;
 
-    //         while (numberOfElectedCandidates < constituency.numberOfSeats) {
-    //             // Candidate elected flag
-    //             bool candidateElected = false;
+            // Droop Quota for the current constituency
+            uint droopQuota = (constituency.numberOfVotes / (constituency.numberOfSeats + 1));
 
-    //             // Reset vote counts for each candidate
-    //             for (uint j = 0; j < constituency.candidates.length; j++) {
-    //                 constituency.candidates[j].votes = 0;
-    //             }
+            // Keep electing candidates until the right number of candidates
+            // have been elected
+            while (numberOfElectedCandidates < constituency.numberOfSeats && numberOfEliminatedCandidates < constituency.candidates.length) {
+                // Candidate elected flag recording if a candidate has been 
+                // elected this round
+                bool candidateElected = false;
 
-    //             // Calculate the number of votes each candidate has
-    //             // Voter addresses array needs ot be shuffled to support random
-    //             // vote reassignment
-    //             for (uint j = 0; j < voterAddresses.length; j++) {
-    //                 // Retrieve the current voters data
-    //                 Voter storage voter = voters[voterIndexs[voterAddresses[j]]];
+                // Reset vote counts for each candidate
+                for (uint j = 0; j < constituency.candidates.length; j++) {
+                    constituency.candidates[j].votes = 0;
+                }
 
-    //                 // Assign each voters current preference candidate a vote
-    //                 if (voter.voteIndex != type(uint).max) {
-    //                     constituency.candidates[voter.candidateRanking[voter.voteIndex]].votes  += 1;
-    //                 }
-    //             }
+                // Calculate the number of votes each candidate has
+                // *** Voter addresses array needs to be shuffled to support random
+                // vote reassignment ***
+                for (uint j = 0; j < constituency.voters.length; j++) {
+                    // Retrieve the current voters data
+                    Voter storage voter = constituency.voters[j];
 
-    //             // Check if any candidate has reached the Droop Quota
-    //             for (uint j = 0; j < constituency.candidates.length; j++) {
-    //                 // Retrieve the candidates data
-    //                 Candidate storage candidate = constituency.candidates[j];
+                    // Assign each voters current preference candidate a vote
+                    if (voter.voteIndex != type(uint).max) {
+                        // Name of the candidate currently recieving the voters vote
+                        bytes32 candidateName = voter.candidateRanking[voter.voteIndex];
+    
+                        // Index of the candidate currently recieving the voters vote
+                        uint candidateIndex = constituency.candidateIndexs[candidateName];
 
-    //                 // Droop quota reached & candidate has not yet been elected
-    //                 if (candidate.votes >= droopQuota
-    //                     && !candidate.elected
-    //                     && !candidate.eliminated
-    //                     && numberOfElectedCandidates < constituency.numberOfSeats) 
-    //                 {
-    //                     // Record that a candidate has been elected
-    //                     candidateElected = true;
-    //                     numberOfElectedCandidates += 1;
+                        // Assign the vote to the current candidate recieving
+                        // the voters vote
+                        constituency.candidates[candidateIndex].votes += 1;
+                    }
+                }
 
-    //                     // Elect the candidate
-    //                     candidate.elected = true;
+                // Check if any unelected and not eliminated candidate in the 
+                // constituency has reached the Droop Quota
+                for (uint j = 0; j < constituency.candidates.length; j++) {
+                    // Retrieve the candidates data
+                    Candidate storage candidate = constituency.candidates[j];
 
-    //                     // Record the elected candidates index in the constituencies
-    //                     // elected candidate indexs array
-    //                     constituency.electedCandidatesIndexes.push(j);
+                    // Droop quota reached & candidate has not yet been elected
+                    if (candidate.votes >= droopQuota
+                        && !candidate.elected
+                        && !candidate.eliminated
+                        && numberOfElectedCandidates < constituency.numberOfSeats) 
+                    {
+                        // Record that a candidate has been elected
+                        candidateElected = true;
+                        numberOfElectedCandidates += 1;
 
-    //                     // Record that the candidate has been elected
-    //                     emit ConstituencyCandidateElected(constituency.name, candidate.name, candidate.party);
+                        // Elect the candidate
+                        candidate.elected = true;
 
-    //                     // Remove excess votes above the droop quota from the
-    //                     // candidates vote count
-    //                     uint excessVotes = candidate.votes - droopQuota;
+                        // Record the elected candidates index in the constituencies
+                        // elected candidate indexs array
+                        constituency.electedCandidatesIndexes.push(j);
 
-    //                     // Number of votes from from the candidate
-    //                     uint votesRemoved = 0;
+                        // Record that the candidate has been elected
+                        emit ConstituencyCandidateElected(constituency.name, candidate.name, candidate.party);
 
-    //                     for (uint k = 0; k < voterAddresses.length; k++) {
-    //                         // Retrieve the currents voters data
-    //                         Voter storage voter = voters[voterIndexs[voterAddresses[k]]];
+                        // Remove excess votes above the droop quota from the
+                        // candidates vote count
+                        uint excessVotes = candidate.votes - droopQuota;
 
-    //                         // Vote for elected candidate found
-    //                         if (voter.candidateRanking[voter.voteIndex] == i) {
-    //                             // Remove the vote from the candidate
-    //                             if (voter.voteIndex < voter.candidateRanking.length - 1) {
-    //                                 // Assign the voters vote to the next candidate in
-    //                                 // their vote ranking
-    //                                 voter.voteIndex += 1;
-    //                             }
-    //                             else {
-    //                                 // No more candidates to assign vote to so
-    //                                 // record vote as invalid
-    //                                 voter.voteIndex = type(uint).max;
-    //                             }
+                        // Number of votes from from the candidate
+                        uint votesRemoved = 0;
 
-    //                             // Record that a vote has been removed
-    //                             votesRemoved += 1;
+                        // Iterate all voters in the constituency looking for
+                        // votes for the elected candidate to lend to another 
+                        // candidate
+                        for (uint k = 0; k < constituency.voters.length; k++) {
+                            // Retrieve the current voters data
+                            Voter storage voter = constituency.voters[k];
 
-    //                             // Stop when all excess votes have been removed
-    //                             if (votesRemoved == excessVotes) {
-    //                                 break;
-    //                             }
-    //                         }
-    //                     }
+                            // Vote for elected candidate found
+                            if (voter.voteIndex != type(uint).max) {
+                                if (voter.candidateRanking[voter.voteIndex] == candidate.name) {
+                                    // Remove the vote from the candidate
+                                    if (voter.voteIndex < voter.candidateRanking.length - 1) {
+                                        // Assign the voters vote to the next candidate in
+                                        // their vote ranking
+                                        voter.voteIndex += 1;
+                                    }
+                                    else {
+                                        // No more candidates to assign vote to so
+                                        // record vote as invalid
+                                        voter.voteIndex = type(uint).max;
+                                    }
 
-    //                     // Record the reduction of votes for the elected candidate
-    //                     candidate.votes = droopQuota;
-    //                 }
-    //             }
+                                    // Record that a vote has been removed
+                                    votesRemoved += 1;
 
-    //             // No candidate has been elected this round so remove the
-    //             // candidate with the lowest number of votes
-    //             if (!candidateElected) {
-    //                 // Remove the candidate with the lowest amount of votes
-    //                 // *** Bound check needed and tie break logic required ***
-    //                 uint lowestVoteCount = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-    //                 uint lowestCandidateIndex = 0;
+                                    // Stop when all excess votes have been removed
+                                    if (votesRemoved == excessVotes) {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
 
-    //                 // Find candidate with the least votes
-    //                 for (uint j = 0; j < constituency.candidates.length; j++) {
-    //                     // Retrieve the current candidates data
-    //                     Candidate storage candidate = constituency.candidates[j];
+                        // Record the reduction of votes for the elected candidate
+                        candidate.votes = droopQuota;
+                    }
+                }
 
-    //                     // Ensure the candidate is still in the election
-    //                     if (!candidate.elected && !candidate.eliminated) {
-    //                         // Candidate has the least votes seen so far
-    //                         if (candidate.votes < lowestVoteCount) {
-    //                             // Record the number of votes for the candidate
-    //                             lowestVoteCount = candidate.votes;
-    //                             // Record index of the candidate with the lowest
-    //                             // number of votes
-    //                             lowestCandidateIndex = i;
-    //                         }
-    //                     }
-    //                 }
+                // No candidate has been elected this round so remove the
+                // candidate with the lowest number of votes
+                if (!candidateElected) {
+                    // Remove the candidate with the lowest amount of votes
+                    // *** Bound check needed and tie break logic required ***
+                    uint lowestVoteCount = type(uint).max;
+                    uint lowestCandidateIndex = 0;
 
-    //                 // Remove the candidate with the least votes
-    //                 constituency.candidates[lowestCandidateIndex].eliminated = true;
-    //             }
-    //         }
-    //     }
+                    // Find candidate with the least votes
+                    for (uint j = 0; j < constituency.candidates.length; j++) {
+                        // Retrieve the current candidates data
+                        Candidate storage candidate = constituency.candidates[j];
 
-    //     // Record that all constituency winners have been calculated
-    //     emit AllConstituencyWinnersCalculated();
-    // }
+                        // Ensure the candidate is still in the election
+                        if (!candidate.elected && !candidate.eliminated) {
+                            // Candidate has the least votes seen so far
+                            if (candidate.votes < lowestVoteCount) {
+                                // Record the number of votes for the candidate
+                                lowestVoteCount = candidate.votes;
+                                // Record index of the candidate with the lowest
+                                // number of votes
+                                lowestCandidateIndex = j;
+                            }
+                        }
+                    }
 
-    // /// @notice Calculate the election results
-    // function calculateElectionResults() 
-    //     public
-    //     onlyAdmin
-    //     electionHasEnded
-    //     resultsHaveNotBeenCalculated
-    // {
-    //     // Calculate the winning candidate in each constituency
-    //     calculateConstituencyWinners();
+                    // Remove the candidate with the least votes
+                    constituency.candidates[lowestCandidateIndex].eliminated = true;
 
-    //     // Calculate the number of elected seats for each party
-    //     for (uint i = 0; i < constituencies.length; i++) {
-    //         // Retrieve the current constituency data
-    //         Constituency storage constituency = constituencies[i];
+                    // Record that another candidate has been eliminated
+                    numberOfEliminatedCandidates += 1;
+                }
+            }
 
-    //         // Record each elected candidate
-    //         for (uint j = 0; j < constituency.electedCandidatesIndexes.length; j++) {
-    //             // Index of the elected candidates party
-    //             uint partyIndex = constituency.electedCandidatesIndexes[j];
+            // Handle the case where not enough candidates have reached the quota
+            // Elect extra candidates based on who has the most votes regardless
+            // of the quota requirements
+            while (numberOfElectedCandidates < constituency.numberOfSeats) {
+                uint highestVoteCount = 0;
+                uint highestCandidateIndex = type(uint).max;
 
-    //             // Record that the party has been elected a seat
-    //             electionParties[partyIndex].electedSeats += 1;
-    //         }
-    //     }
+                for (uint j = 0; j < constituency.candidates.length; j++) {
+                    Candidate storage candidate = constituency.candidates[j];
 
-    //     // Record that the election results have been calculated
-    //     resultsCalculated = true;
+                    if (candidate.votes > highestVoteCount) {
+                        highestVoteCount = candidate.votes;
+                        highestCandidateIndex = j;
+                    }
+                }
 
-    //     // Record that the election results have been calculated
-    //     emit ElectionResultsCalculated();
+                if (highestCandidateIndex < type(uint).max) {
+                    Candidate storage candidate = constituency.candidates[highestCandidateIndex];
 
-    //     // Index of the party with the most elected seats
-    //     uint winningPartyIndex = 0;
-    //     // Number of elected seats for the winning party
-    //     uint maxElectedSeats = 0;
+                    candidate.elected = true;
+                    numberOfElectedCandidates += 1;
 
-    //     // Record the number of elected seats for each party in the election
-    //     for (uint i = 0; i < electionParties.length; i++) {
-    //         Party storage party = electionParties[i];
+                    constituency.electedCandidatesIndexes.push(highestCandidateIndex);
 
-    //         emit PartyResults(party.name, party.electedSeats);
+                    emit ConstituencyCandidateElected(candidate.constituency, candidate.name, candidate.party);
+                } else {
+                    break;
+                }
+            }
+        }
 
-    //         if (party.electedSeats > maxElectedSeats) {
-    //             winningPartyIndex = i;
-    //             maxElectedSeats = party.electedSeats;
-    //         }
-    //     }
+        // Record that all constituency winners have been calculated
+        emit AllConstituencyWinnersCalculated();
+    }
 
-    //     if (electionParties.length > 0) {
-    //         Party storage winningParty = electionParties[winningPartyIndex];
+    /// @notice Calculate the election results
+    function calculateElectionResults() 
+        public
+        onlyAdmin
+        electionHasEnded
+        resultsHaveNotBeenCalculated
+    {
+        // Calculate the winning candidate in each constituency
+        calculateConstituencyWinners();
 
-    //         emit ElectionWinner(winningParty.name, winningParty.electedSeats);
-    //     }
-    // }
+        // Calculate the number of elected seats for each party
+        for (uint i = 0; i < constituencies.length; i++) {
+            // Retrieve the current constituency data
+            Constituency storage constituency = constituencies[i];
+
+            // Record each elected candidate
+            for (uint j = 0; j < constituency.electedCandidatesIndexes.length; j++) {
+                uint candidateIndex = constituency.electedCandidatesIndexes[j];
+                bytes32 partyName = constituency.candidates[candidateIndex].party;
+                // Index of the elected candidates party
+                uint partyIndex = partyIndexs[partyName];
+
+                // Record that the party has been elected a seat
+                electionParties[partyIndex].electedSeats += 1;
+            }
+        }
+
+        // Record that the election results have been calculated
+        resultsCalculated = true;
+
+        // Record that the election results have been calculated
+        emit ElectionResultsCalculated();
+
+        // Index of the party with the most elected seats
+        uint winningPartyIndex = 0;
+        // Number of elected seats for the winning party
+        uint maxElectedSeats = 0;
+
+        // Record the number of elected seats for each party in the election
+        for (uint i = 0; i < electionParties.length; i++) {
+            Party storage party = electionParties[i];
+
+            emit PartyResults(party.name, party.electedSeats);
+
+            if (party.electedSeats > maxElectedSeats) {
+                winningPartyIndex = i;
+                maxElectedSeats = party.electedSeats;
+            }
+        }
+
+        if (electionParties.length > 0) {
+            Party storage winningParty = electionParties[winningPartyIndex];
+
+            emit ElectionWinner(winningParty.name, winningParty.electedSeats);
+        }
+    }
 
     /// @notice End the election
     function endElection()
@@ -636,7 +695,7 @@ contract STV {
         emit ElectionEnded();
 
         // Calculate the results of the election
-        // calculateElectionResults();
+        calculateElectionResults();
 
         return true;
     }
