@@ -1162,4 +1162,156 @@ describe("Single Transferable Vote - End Election", function () {
         expect(eventLog[10].args[0]).to.equal(ethers.encodeBytes32String("Conservatives"))
         expect(eventLog[10].args[1]).to.equal(2)
     })
+
+    it("Should conduct a more complex election - Wikipedia droop quota example", async function () {
+        // Test of an exampe STV election from 
+        // https://en.wikipedia.org/wiki/Droop_quota
+        
+        // Number of seats available for election
+        const numberOfSeats = 3;
+
+        // Add a constituency
+        const constituency = ethers.encodeBytes32String("Harrogate");
+        await election.addConstituency(constituency, numberOfSeats);
+
+        // Add 4 candidates to the Harrogate constituency
+        // Washington, Conservative, Harrogate
+        const candidate1 = ethers.encodeBytes32String("Washington");
+        const party1 = ethers.encodeBytes32String("Conservative");
+        await election.addConstituencyCandidate(candidate1, party1, constituency);
+
+        // Hamilton, Labour, Harrogate
+        const candidate2 = ethers.encodeBytes32String("Hamilton");
+        const party2 = ethers.encodeBytes32String("Labour");
+        await election.addConstituencyCandidate(candidate2, party2, constituency);
+
+        // Jefferson, Liberal, Harrogate
+        const candidate3 = ethers.encodeBytes32String("Jefferson");
+        const party3 = ethers.encodeBytes32String("Liberal");
+        await election.addConstituencyCandidate(candidate3, party3, constituency);
+
+        // Burr, Reform, Harrogate
+        const candidate4 = ethers.encodeBytes32String("Burr");
+        const party4 = ethers.encodeBytes32String("Reform");
+        await election.addConstituencyCandidate(candidate4, party4, constituency);
+
+        // Add 100 voters to the Harrogate constituency
+        const harrogateVoters = [];
+        for (let i = 0; i < 100; i++) {
+            const voter = ethers.Wallet.createRandom(); // Create a random wallet for each voter
+            harrogateVoters.push(voter); // Store the full wallet object in the array
+
+            // Fund the voter wallet with some Ether (required for gas fees)
+            const tx = await admin.sendTransaction({
+                to: voter.address,
+                value: ethers.parseEther("0.005"), // Send 1 Ether
+            });
+            await tx.wait();
+
+            // Add the voter to the election
+            await expect(election.addVoter(voter.address, constituency))
+                .to.emit(election, "VoterAdded")
+                .withArgs(voter.address, constituency);
+        }
+
+        // Start the election
+        await election.startElection();
+
+        // Cast 45 ranked votes of [Washington, Hamilton, Jefferson]
+        for (let i = 0; i < 45; i++) {
+            const voterWallet = harrogateVoters[i].connect(ethers.provider);
+
+            await expect(election.connect(voterWallet).castVote([candidate1, candidate2, candidate3]))
+                .to.emit(election, "VoteCast")
+                .withArgs(voterWallet.address);
+        }
+
+        // Cast 20 votes of [Burr, Jefferson, Washington]
+        for (let i = 45; i < 65; i++) {
+            const voterWallet = harrogateVoters[i].connect(ethers.provider);
+
+            await expect(election.connect(voterWallet).castVote([candidate4, candidate3, candidate1]))
+                .to.emit(election, "VoteCast")
+                .withArgs(voterWallet.address);
+        }
+
+        // Cast 25 votes of [Jefferson, Burr, Washington]
+        for (let i = 65; i < 90; i++) {
+            const voterWallet = harrogateVoters[i].connect(ethers.provider);
+
+            await expect(election.connect(voterWallet).castVote([candidate3, candidate4, candidate1]))
+                .to.emit(election, "VoteCast")
+                .withArgs(voterWallet.address);
+        }
+
+        // Cast 10 votes of [Hamilton, Washington, Jefferson]
+        for (let i = 90; i < 100; i++) {
+            const voterWallet = harrogateVoters[i].connect(ethers.provider);
+
+            await expect(election.connect(voterWallet).castVote([candidate2, candidate1, candidate3]))
+                .to.emit(election, "VoteCast")
+                .withArgs(voterWallet.address);
+        }
+
+        // End the election
+        const tx = await election.endElection();
+        const result = await tx.wait();
+        const eventLog = result.logs;
+
+        // Election Ended Event
+        expect(eventLog[0].fragment.name).to.equal("ElectionEnded");
+
+        // Washington Elected
+        expect(eventLog[1].fragment.name).to.equal("ConstituencyCandidateElected");
+        expect(eventLog[1].args[0]).to.equal(constituency);
+        expect(eventLog[1].args[1]).to.equal(candidate1);
+        expect(eventLog[1].args[2]).to.equal(party1);
+
+        // Hamilton Elected
+        expect(eventLog[2].fragment.name).to.equal("ConstituencyCandidateElected");
+        expect(eventLog[2].args[0]).to.equal(constituency);
+        expect(eventLog[2].args[1]).to.equal(candidate2);
+        expect(eventLog[2].args[2]).to.equal(party2);
+
+        // Jefferson Elected
+        expect(eventLog[3].fragment.name).to.equal("ConstituencyCandidateElected");
+        expect(eventLog[3].args[0]).to.equal(constituency);
+        expect(eventLog[3].args[1]).to.equal(candidate3);
+        expect(eventLog[3].args[2]).to.equal(party3);
+
+        // All Constituency Winners Calcualted
+        expect(eventLog[4].fragment.name).to.equal("AllConstituencyWinnersCalculated");
+
+        // Election Results Calculated Event
+        expect(eventLog[5].fragment.name).to.equal("ElectionResultsCalculated");
+
+        // Conservative Party Results
+        expect(eventLog[6].fragment.name).to.equal("PartyResults");
+        expect(eventLog[6].args[0]).to.equal(party1);
+        expect(eventLog[6].args[1]).to.equal(1);
+
+        // Labour Party Results
+        expect(eventLog[7].fragment.name).to.equal("PartyResults");
+        expect(eventLog[7].args[0]).to.equal(party2);
+        expect(eventLog[7].args[1]).to.equal(1);
+
+        // Liberal Party Results
+        expect(eventLog[8].fragment.name).to.equal("PartyResults");
+        expect(eventLog[8].args[0]).to.equal(party3);
+        expect(eventLog[8].args[1]).to.equal(1);
+
+        // Reform Party Results
+        expect(eventLog[9].fragment.name).to.equal("PartyResults");
+        expect(eventLog[9].args[0]).to.equal(party4);
+        expect(eventLog[9].args[1]).to.equal(0);
+
+        // Election Winner Event
+        expect(eventLog[10].fragment.name).to.equal("ElectionWinner");
+        expect(eventLog[10].args[0]).to.equal(party1, 1);
+
+    })
 })
+
+
+
+// Simulate an election using the Uk General eleciton data
