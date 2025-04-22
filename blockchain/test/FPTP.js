@@ -3,7 +3,7 @@ const csv = require("csv-parser");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("First Past The Post - Add Constituency", function () {
+describe("First Past the Post - Add Constituency", function () {
     beforeEach(async function () {
         [admin, voter] = await ethers.getSigners();
 
@@ -41,6 +41,7 @@ describe("First Past The Post - Add Constituency", function () {
     })
 
     it("Only the admin can add constituencies", async function () {
+        // Test constituency name
         const constituencyName = ethers.encodeBytes32String("Test Constituency");
 
         // Add a constituency as the admin
@@ -54,6 +55,7 @@ describe("First Past The Post - Add Constituency", function () {
     })
 
     it("A duplicate constituency cannot be added", async function () {
+        // Test constituency name
         const constituencyName = ethers.encodeBytes32String("Test Constituency");
 
         // Add the constituency
@@ -86,7 +88,7 @@ describe("First Past The Post - Add Constituency", function () {
     })
 })
 
-describe("First Past The Post - Add Constituency Candidate", function () {
+describe("First Past the Post - Add Constituency Candidate", function () {
     // Test constituency name
     const constituencyName = ethers.encodeBytes32String("Test Constituency");
 
@@ -253,7 +255,7 @@ describe("First Past The Post - Add Constituency Candidate", function () {
     })
 })
 
-describe("First Past The Post - Add Voter", function () {
+describe("First Past the Post - Add Voter", function () {
     // Test constituency name
     const constituencyName = ethers.encodeBytes32String("Test Constituency");
 
@@ -350,7 +352,7 @@ describe("First Past The Post - Add Voter", function () {
     })
 })
 
-describe("First Past The Post - Cast Vote", function () {
+describe("First Past the Post - Cast Vote", function () {
     // Test constituency name
     const constituencyName = ethers.encodeBytes32String("Test Constituency");
 
@@ -519,7 +521,7 @@ describe("First Past The Post - Cast Vote", function () {
     })
 })
 
-describe("First Past The Post - Start Election", function () {
+describe("First Past the Post - Start Election", function () {
     beforeEach(async function () {
         [admin, voter] = await ethers.getSigners();
 
@@ -562,7 +564,7 @@ describe("First Past The Post - Start Election", function () {
     })
 })
 
-describe("First Past The Post - End Election", function () {
+describe("First Past the Post - End Election", function () {
     beforeEach(async function () {
         [admin, voter] = await ethers.getSigners();
 
@@ -621,7 +623,7 @@ describe("First Past The Post - End Election", function () {
     })
 })
 
-describe("First Past The Post - Calculate Election Results", function () {
+describe("First Past the Post - Calculate Election Results", function () {
     beforeEach(async function () {
         [admin, voter, voter2, voter3, voter4] = await ethers.getSigners();
 
@@ -693,7 +695,6 @@ describe("First Past The Post - Calculate Election Results", function () {
             .withArgs(constituency1, candidate1, candidate1)
     })
 
-    // Test for multiple constituencies
     it("Should correctly calculate the winner in an election with multiple constituencies", async function () {
         // Add 4 constituencies
         // Constituency 1
@@ -1060,7 +1061,7 @@ function readConstituencyData(file) {
   });
 }
 
-describe.skip("First Past The Post - Simulate an Aberafan Maesteg constituency election", function () {
+describe.skip("First Past the Post - Simulate an Aberafan Maesteg constituency election", function () {
     let constituencyData;
 
     beforeEach(async function () {
