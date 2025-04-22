@@ -490,7 +490,7 @@ contract STV {
                     Candidate storage candidate = constituency.candidates[j];
 
                     // Droop quota reached & candidate has not yet been elected
-                    if (candidate.votes >= droopQuota
+                    if (candidate.votes > droopQuota
                         && !candidate.elected
                         && !candidate.eliminated
                         && numberOfElectedCandidates < constituency.numberOfSeats) 
