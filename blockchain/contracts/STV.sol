@@ -592,28 +592,43 @@ contract STV {
             // Elect extra candidates based on who has the most votes regardless
             // of the quota requirements
             while (numberOfElectedCandidates < constituency.numberOfSeats) {
+                // Highest number of votes seen so far
                 uint highestVoteCount = 0;
+                // Index of the candidate with the highest votes seen so far
                 uint highestCandidateIndex = type(uint).max;
 
+                // Find candidate with the most votes
                 for (uint j = 0; j < constituency.candidates.length; j++) {
+                    // Retrieve candidate information
                     Candidate storage candidate = constituency.candidates[j];
 
+                    // New highest number of votes seen
                     if (candidate.votes > highestVoteCount) {
+                        // Update highest vote count
                         highestVoteCount = candidate.votes;
+                        // Update index of the candidate with the most votes
                         highestCandidateIndex = j;
                     }
                 }
 
+                // Elect the candidate with the highest number of votes
                 if (highestCandidateIndex < type(uint).max) {
+                    // Retrieve the infromation of the candidate to be elected
                     Candidate storage candidate = constituency.candidates[highestCandidateIndex];
 
+                    // Record that the candidate has been elected
                     candidate.elected = true;
+                    // Record that another candidate has been elected
                     numberOfElectedCandidates += 1;
 
+                    // Add the candidates index to the array of elected candidates
+                    // in the constituency
                     constituency.electedCandidatesIndexes.push(highestCandidateIndex);
 
+                    // Record that a candidate has been elected
                     emit ConstituencyCandidateElected(candidate.constituency, candidate.name, candidate.party);
                 } else {
+                    // No highest candidate found so break
                     break;
                 }
             }
