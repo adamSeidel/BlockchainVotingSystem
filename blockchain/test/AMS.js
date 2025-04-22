@@ -1,415 +1,692 @@
 const fs = require("fs");
-const csv = require("csv-parser");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-function readConstituencyNames(file) {
-  return new Promise((resolve, reject) => {
-    const constituencies = [];
-    fs.createReadStream(file)
-      .pipe(csv())
-      .on('data', (row) => {
-        if (row["Constituency name"]) {
-          constituencies.push({
-            constituencyName: ethers.encodeBytes32String(row["Constituency name"].substring(0, 31)),
-            votes: [row["Con"], row["Lab"], row["LD"], row["RUK"], row["Green"], row["SNP"], row["PC"], row["DUP"], row["SF"], row["SDLP"], row["UUP"], row["APNI"]]
-          })
-        }
-      })
-      .on('end', () => resolve(constituencies))
-      .on('error', (error) => reject(error));
-  });
-}
+describe("Additional Member System - Add Constituency", function () {
+    beforeEach(async function () {
+        [admin, voter] = await ethers.getSigners();
 
-describe("AMS", function () {
+        Election = await ethers.getContractFactory("AMS", admin);
+        election = await Election.deploy(1);
 
-    before(async function () {
-        constituencies = await readConstituencyNames("./test/UK-2024-Election-Results.csv");
-
-        // Taken from the UK 2024 General Election
-        partyNames = [
-            ethers.encodeBytes32String("Conservative and Unionist Party"),
-            ethers.encodeBytes32String("Labour Party"),
-            ethers.encodeBytes32String("Liberal Democrats"),
-            ethers.encodeBytes32String("Reform UK"),
-            // ethers.encodeBytes32String("Green Party"),
-            // ethers.encodeBytes32String("Scottish National Party"),
-            // ethers.encodeBytes32String("Plaid Cymru"),
-            // ethers.encodeBytes32String("Democratic Unionist Party"),
-            // ethers.encodeBytes32String("Sinn Fein"),
-            // ethers.encodeBytes32String("Social Democratic and Labour Pa"),
-            // ethers.encodeBytes32String("Ulster Unionist Party"),
-            // ethers.encodeBytes32String("Alliance Party of Nortern Irela"),
-        ];
+        await election.waitForDeployment();
     })
 
-    this.beforeEach(async function () {
-        // Get the signers: the deployer will act as admin and another account as a voter
-        [admin, voter, voter2, voter3, voter4] = await ethers.getSigners();
+    it("Must add a new constituency", async function  () {
+        // Test constituency name
+        const constituencyName = ethers.encodeBytes32String("Test Constituency");
 
-        // Deploy the AMS contract
+        // Add a constituency before the election has started
+        await expect(election.addConstituency(constituencyName))
+            .to.emit(election, "ConstituencyAdded")
+            .withArgs(constituencyName);
+    })
+
+    it("A constituency can only be added before the election has started", async function () {
+        // Test constituency name
+        const constituencyName = ethers.encodeBytes32String("Test Constituency");
+
+        // Add a constituency before the election has started
+        await expect(election.addConstituency(constituencyName))
+            .to.emit(election, "ConstituencyAdded")
+            .withArgs(constituencyName);
+
+        // Start the election
+        await election.startElection();
+
+        // Attemp to add a constituency after the election has started
+        await expect(election.addConstituency(constituencyName))
+            .to.be.revertedWith("The election has already started so it is not possible to perform this action");
+    })
+
+    it("Only the admin can add constituencies", async function () {
+        // Test constituency name
+        const constituencyName = ethers.encodeBytes32String("Test Constituency");
+
+        // Add a constituency as the admin
+        await expect(election.addConstituency(constituencyName))
+        .to.emit(election, "ConstituencyAdded")
+        .withArgs(constituencyName);
+
+        // Attempt to add a constituency as a non-admin
+        await expect(election.connect(voter).addConstituency(constituencyName))
+            .to.be.revertedWith("Only the election admin can perform this action");
+    })
+
+    it("A duplicate constituency cannot be added", async function () {
+        // Test constituency name
+        const constituencyName = ethers.encodeBytes32String("Test Constituency");
+
+        // Add the constituency
+        await expect(election.addConstituency(constituencyName))
+        .to.emit(election, "ConstituencyAdded")
+        .withArgs(constituencyName);
+
+        // Attempt to add the duplicate constituency
+        await expect(election.addConstituency(constituencyName))
+        .to.be.revertedWith("Constituency already exists");
+    })
+
+    it("Emits a constituency added event when a new constituency is added", async function () {
+        // Test constituency name
+        const constituencyName = ethers.encodeBytes32String("Test Constituency");
+
+        // Add a constituency before the election has started
+        await expect(election.addConstituency(constituencyName))
+            .to.emit(election, "ConstituencyAdded")
+            .withArgs(constituencyName);
+    })
+
+    it("Constituency name cannot be an empty string", async function  () {
+        // Test constituency name
+        let constituencyName = ethers.encodeBytes32String("");
+
+        // Add a constituency before the election has started
+        await expect(election.addConstituency(constituencyName))
+            .to.be.revertedWith("Constituency name cannot be empty");
+    })
+})
+
+describe("Additional Member System -  Add Constituency Candidate", function () {
+    // Test constituency name
+    const constituencyName = ethers.encodeBytes32String("Test Constituency");
+    
+    beforeEach(async function () {
+        [admin, voter] = await ethers.getSigners();
+
         Election = await ethers.getContractFactory("AMS", admin);
-        election = await Election.deploy(100, 70);
+        election = await Election.deploy(1)
+
         await election.waitForDeployment();
 
-        // Add the partys for the popular vote
-        for (let i = 0; i < partyNames.length; i++) {
-            await election.addParty(partyNames[i]);
-        }
-
-        // Add 70 constituencies
-        for (let i = 0; i < 70; i++) {
-            await election.addConstituency(constituencies[i].constituencyName, partyNames);
-        }
+        // Add a constituency to the election before the election has started
+        await expect(election.addConstituency(constituencyName))
+            .to.emit(election, "ConstituencyAdded")
+            .withArgs(constituencyName);
     })
 
-    it("should return the number of seats", async function () {
-        const numberOfSeats = await election.getNumberOfSeats();
-        expect(numberOfSeats).to.equal(100);
+    it("Should add a new candidate", async function  () {
+        // Test candidate name
+        const candidateName = ethers.encodeBytes32String("Test Candidate");
+        // Test party name
+        const partyName = ethers.encodeBytes32String("Test Party");
+
+        // Add a constituency candidate as an admin
+        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
+            .to.emit(election, "CandidateAdded")
+            .withArgs(candidateName, partyName, constituencyName);
     })
 
-    it("should return the number of constituencies", async function () {
-        const numberOfConstituencies = await election.getNumberOfConstituencies();
-        expect(numberOfConstituencies).to.equal(70);
+    it("Only the admin can add a constituency candidate", async function () {
+        // Test candidate name
+        const candidateName = ethers.encodeBytes32String("Test Candidate");
+        // Test party name
+        const partyName = ethers.encodeBytes32String("Test Party");
+
+        // Add a constituency candidate as an admin
+        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
+            .to.emit(election, "CandidateAdded");
+
+        // Attempt to add a constiteuncy candidate as a non admin
+        await expect(election.connect(voter).addConstituencyCandidate(candidateName, partyName, constituencyName))
+            .to.be.revertedWith("Only the election admin can perform this action");
     })
 
-    it("should return the parties for the popular vote", async function () {
-        const parties = await election.getPartyNames();
-        expect(parties.length).to.equal(partyNames.length);
+    it("Constituency candidate cannot be added once an election has started", async function () {
+        // Test candidate name
+        const candidateName = ethers.encodeBytes32String("Test Candidate");
+        // Test party name
+        const partyName = ethers.encodeBytes32String("Test Party");
 
-        for (let i = 0; i < partyNames.length; i++) {
-            expect(parties[i]).to.equal(partyNames[i]);
-        }
-    });
+        // Add a constituency candidate
+        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
+            .to.emit(election, "CandidateAdded");
 
-    it("should return the constituencies", async function () {
-        const constituencyNames = await election.getConstituencyNames();
-        expect(constituencyNames.length).to.equal(70);
+        // Start election
+        await election.startElection()
 
-        for (let i = 0; i < 70; i++) {
-            expect(constituencyNames[i]).to.equal(constituencies[i].constituencyName);
-        }
+        // Attempt to add an election candidate after the election has started
+        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
+            .to.be.revertedWith("The election has already started so it is not possible to perform this action");
     })
 
-    it("should return the candidates for each constituency", async function () {
-        for (let i = 0; i < 100; i++) {
-            const constituencyCandidates = await election.getCandidateNamesByConstituency(constituencies[i].constituencyName);
+    it("Candidate can only be added to a valid constituency", async function () {
+        // Test candidate name
+        let candidateName = ethers.encodeBytes32String("Test Candidate");
+        // Test party name
+        const partyName = ethers.encodeBytes32String("Test Party");
 
-            for (let j = 0; j < partyNames.length; j++) {
-                expect(constituencyCandidates[j]).to.equal(partyNames[j]);
-            }
-        }
+        // Add a constituency candidate
+        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
+            .to.emit(election, "CandidateAdded");
+
+        // Attempt to add a constituency candidate to a constituency that does not exist
+        const constituencyName2 = ethers.encodeBytes32String("Test Constituency 2");
+
+        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName2))
+            .to.be.revertedWith("Constituency does not exist");
     })
 
-    it("should add a voter sucessfully", async function () {
-        // Admin gives the right to vote to the voter with a specific constituency.
-        await election.giveRightToVote(voter.address, constituencies[0].constituencyName);
+    it("Records candidate name", async function () {
+        // Test candidate name
+        let candidateName = ethers.encodeBytes32String("Test Candidate");
+        // Test party name
+        const partyName = ethers.encodeBytes32String("Test Party");
 
-        // Retrieve voter information from the contract
-        const voterInfo = await election.voters(voter.address);
+        // Add a constituency candidate
+        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
+            .to.emit(election, "CandidateAdded")
+            .withArgs(candidateName, partyName, constituencyName);
+    })
+
+    it("Records candidate party", async function () {
+        // Test candidate name
+        let candidateName = ethers.encodeBytes32String("Test Candidate");
+        // Test party name
+        const partyName = ethers.encodeBytes32String("Test Party");
+
+        // Add a constituency candidate
+        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
+            .to.emit(election, "CandidateAdded")
+            .withArgs(candidateName, partyName, constituencyName);
+    })
+
+    it("Records candidate constituency", async function () {
+        // Test candidate name
+        let candidateName = ethers.encodeBytes32String("Test Candidate");
+        // Test party name
+        const partyName = ethers.encodeBytes32String("Test Party");
+
+        // Add a constituency candidate
+        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
+            .to.emit(election, "CandidateAdded")
+            .withArgs(candidateName, partyName, constituencyName);
+    })
+    
+    it("Record new parties", async function () {
+        // Test candidate name
+        let candidateName = ethers.encodeBytes32String("Test Candidate");
+        // Test party name
+        const partyName = ethers.encodeBytes32String("Test Party");
+
+        // Add a constituency candidate
+        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
+            .to.emit(election, "PartyAdded")
+            .withArgs(partyName);
+    })
+
+    it("Records the party name correclty", async function () {
+         // Test candidate name
+         let candidateName = ethers.encodeBytes32String("Test Candidate");
+         // Test party name
+         const partyName = ethers.encodeBytes32String("Test Party");
+ 
+         // Add a constituency candidate
+         await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
+             .to.emit(election, "PartyAdded")
+             .withArgs(partyName);
+    })
+
+    it("Should emit a candidate added event", async function () {
+        // Test candidate name
+        let candidateName = ethers.encodeBytes32String("Test Candidate");
+        // Test party name
+        let partyName = ethers.encodeBytes32String("Test Party");
+
+        // Add a constituency candidate
+        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
+            .to.emit(election, "CandidateAdded");
+    })
+
+    it("Multiple candidates with the same name cannot be added", async function () {
+        // Test candidate name
+        let candidateName = ethers.encodeBytes32String("Test Candidate");
+        // Test party name
+        let partyName = ethers.encodeBytes32String("Test Party");
+
+        // Add a constituency candidate
+        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
+            .to.emit(election, "CandidateAdded");
+
+        // Attempt to add the same candidate again
+        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
+        .to.be.revertedWith("This candidate already exists");
+    })
+})
+
+describe("Additional Member System - Add Voter", function () {
+    // Test constituency name
+    const constituencyName = ethers.encodeBytes32String("Test Constituency");
+
+    beforeEach(async function () {
+        [admin, voter] = await ethers.getSigners();
+
+        Election = await ethers.getContractFactory("AMS", admin);
+        election = await Election.deploy(1);
+
+        await election.waitForDeployment();
+
+        // Add a constituency before the election has started
+        await expect(election.addConstituency(constituencyName))
+            .to.emit(election, "ConstituencyAdded")
+            .withArgs(constituencyName);
+    })
+
+    it("Adds a new voter", async function () {
+        // Add a new voter as an admin
+        await expect(election.addVoter(voter.address, constituencyName))
+        .to.emit(election, "VoterAdded")
+        .withArgs(voter.address, constituencyName)
+    })
+
+    it("Only the admin can add new voters", async function () {
+        // Attempt to add a new voter as a non-admin
+        await expect(election.connect(voter).addVoter(voter.address, constituencyName))
+            .to.be.revertedWith("Only the election admin can perform this action");
+
+        // Add a new voter as an admin
+        await expect(election.addVoter(voter.address, constituencyName))
+        .to.emit(election, "VoterAdded")
+        .withArgs(voter.address, constituencyName)
+    })
+
+    it("Voters can only be added before the election has started", async function () {
+        // Add a new voter before election has started
+        await expect(election.addVoter(voter.address, constituencyName))
+        .to.emit(election, "VoterAdded")
+        .withArgs(voter.address, constituencyName)
+
+        // Start the election
+        await election.startElection()
+
+        // Attempt to add a new voter now that the election has started
+        await expect(election.addVoter(voter.address, constituencyName))
+        .to.be.revertedWith("The election has already started so it is not possible to perform this action");
+    })
+
+    it("Voter must not already exist", async function () {
+        // Add a new voter
+        await expect(election.addVoter(voter.address, constituencyName))
+        .to.emit(election, "VoterAdded")
+        .withArgs(voter.address, constituencyName)
+
+        // Attempt to add the same voter again
+        await expect(election.addVoter(voter.address, constituencyName))
+        .to.be.revertedWith("This voter is already registered to vote");
+    })
+
+    it("Voters associated constituency must exist", async function () {
+        // Constituency name that does not exist
+        const constituencyName2 = ethers.encodeBytes32String("Test Constituency2");
         
-        // Ensure the constituency is set correctly
-        expect(voterInfo.constituency).to.equal(constituencies[0].constituencyName);
-        // The voter should not have voted yet
-        expect(voterInfo.voted).to.equal(false);
+        // Attempt to add a voter with a constituency that does not exist
+        await expect(election.addVoter(voter.address, constituencyName2))
+        .to.be.revertedWith("Constituency does not exist");
+
+        // Add a new voter
+        await expect(election.addVoter(voter.address, constituencyName))
+        .to.emit(election, "VoterAdded")
+        .withArgs(voter.address, constituencyName)
     })
 
-    it("should retrieve the voters constituency", async function () {
-        // Admin gives the right to vote to the voter with a specific constituency.
-        await election.giveRightToVote(voter.address, constituencies[0].constituencyName);
-
-        // Retrieve voter information from the contract
-        const voterConstituency = await election.getVoterConstituency(voter.address);
-
-        expect(voterConstituency).to.equal(constituencies[0].constituencyName);
+    it("Initialises a new voter as having not yet voted", async function () {
+        // Add a new voter
+        await expect(election.addVoter(voter.address, constituencyName))
+        .to.emit(election, "VoterAdded")
+        .withArgs(voter.address, constituencyName)
     })
 
-    it("should return all eligible voters", async function () {
-        await election.giveRightToVote(voter.address, constituencies[0].constituencyName);
-        await election.giveRightToVote(voter2.address, constituencies[1].constituencyName);
-    
-        const eligibleVoters = await election.getEligibleVoters();
-    
-        expect(eligibleVoters[0]).to.equal(voter.address);
-        expect(eligibleVoters[1]).to.equal(voter2.address);
+    it("Initialises a new voters constituency correctly", async function () {
+        // Add a new voter
+        await expect(election.addVoter(voter.address, constituencyName))
+        .to.emit(election, "VoterAdded")
+        .withArgs(voter.address, constituencyName)
     })
 
-    it("should return the constituency of all eligible voters", async function () {
-        await election.giveRightToVote(voter.address, constituencies[0].constituencyName);
-        await election.giveRightToVote(voter2.address, constituencies[1].constituencyName);
-    
-        const voterConstituencies = await election.getEligibleVotersConstituencies();
-    
-        expect(voterConstituencies[0]).to.equal(constituencies[0].constituencyName);
-        expect(voterConstituencies[1]).to.equal(constituencies[1].constituencyName);
+    it("Voter added event is emitted", async function () {
+        // Add a new voter as an admin
+        await expect(election.addVoter(voter.address, constituencyName))
+        .to.emit(election, "VoterAdded")
+        .withArgs(voter.address, constituencyName)
+    })
+})
+
+describe("Additional Member System - Cast Vote", function () {
+    // Test constituency name
+    const constituencyName = ethers.encodeBytes32String("Test Constituency");
+
+    beforeEach(async function () {
+        [admin, voter] = await ethers.getSigners();
+
+        Election = await ethers.getContractFactory("AMS", admin);
+        election = await Election.deploy(1);
+
+        await election.waitForDeployment();
+
+        // Add a constituency before the election has started
+        await expect(election.addConstituency(constituencyName))
+            .to.emit(election, "ConstituencyAdded")
+            .withArgs(constituencyName);
+        
+        // Add 3 candidates for testing
+        // Candidate 1
+        // Test candidate name
+        let candidateName = ethers.encodeBytes32String("Test Candidate1");
+        // Test party name
+        let partyName = ethers.encodeBytes32String("Test Party1");
+
+        // Add a constituency candidate as an admin
+        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
+            .to.emit(election, "CandidateAdded");
+
+        // Candidate 2
+        // Test candidate name
+        candidateName = ethers.encodeBytes32String("Test Candidate2");
+        // Test party name
+        partyName = ethers.encodeBytes32String("Test Party2");
+
+        // Add a constituency candidate as an admin
+        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
+            .to.emit(election, "CandidateAdded");
+
+        // Candidate 3
+        // Test candidate name
+        candidateName = ethers.encodeBytes32String("Test Candidate3");
+        // Test party name
+        partyName = ethers.encodeBytes32String("Test Party3");
+
+        // Add a constituency candidate as an admin
+        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
+            .to.emit(election, "CandidateAdded");
+
+        // Give a voter the right to vote for testing purposes
+        // Add a new voter as an admin
+        await expect(election.addVoter(voter.address, constituencyName))
+        .to.emit(election, "VoterAdded")
+        .withArgs(voter.address, constituencyName)
     })
 
-    it("should return the address and constituency of all eligible voters", async function () {
-        await election.giveRightToVote(voter.address, constituencies[0].constituencyName);
-        await election.giveRightToVote(voter2.address, constituencies[1].constituencyName);
-    
-        const [eligibleVoters, voterConstituencies] = await election.getEligibleVotersAndConstituency();
-    
-        expect(eligibleVoters[0]).to.equal(voter.address);
-        expect(eligibleVoters[1]).to.equal(voter2.address);
-    
-        expect(voterConstituencies[0]).to.equal(constituencies[0].constituencyName);
-        expect(voterConstituencies[1]).to.equal(constituencies[1].constituencyName);
+    it("Vote must be cast", async function () {
+        // Candidate the voter will vote for
+        const voteCandidate = ethers.encodeBytes32String("Test Candidate1");
+
+        // Party the voter will vote for
+        const voteParty = ethers.encodeBytes32String("Test Party2");
+
+        // Start election
+        await election.startElection();
+
+        // Cast a valid vote
+        await expect(election.connect(voter).castVote(voteCandidate, voteParty))
+            .to.emit(election, "VoteCast")
+            .withArgs(voter.address);
     })
 
-    it("should end the election", async function () {
+    it("Votes can only be added once the election has started", async function () {
+        // Candidate the voter will vote for
+        const voteCandidate = ethers.encodeBytes32String("Test Candidate1");
+
+        // Party the voter will vote for
+        const voteParty = ethers.encodeBytes32String("Test Party2");
+
+        // Attempt to cast a vote before the election has started
+        await expect(election.connect(voter).castVote(voteCandidate, voteParty))
+            .to.be.revertedWith("The election has not started so it is not possible to perform this action");
+
+        // Start election
+        await election.startElection();
+
+        // Cast a vote once the election has started
+        await expect(election.connect(voter).castVote(voteCandidate, voteParty))
+            .to.emit(election, "VoteCast")
+            .withArgs(voter.address);
+    })
+
+    it("Votes can only be added before the election has ended", async function () {
+        // Candidate the voter will vote for
+        const voteCandidate = ethers.encodeBytes32String("Test Candidate1");
+
+        // Party the voter will vote for
+        const voteParty = ethers.encodeBytes32String("Test Party2");
+
+        // Start the election
+        await election.startElection();
+
+        // End the election
         await election.endElection();
-        
-        const electionStatus = await election.electionEnded();
-        
-        expect(electionStatus).to.equal(true);
-    });
 
-    it("should cast a vote", async function () {
-        await election.giveRightToVote(voter.address, constituencies[0].constituencyName)
-
-        await election.connect(voter).vote(0, 0)
-
-        const constituencyCandidates = await election.getCandidatesByConstituency(constituencies[0].constituencyName)
-
-        // Confirm constituency vote
-        expect(constituencyCandidates[0].voteCount).to.equal(1);
-
-        const partys = await election.getPartys()
-
-        expect(partys[0].voteCount).to.equal(1);
+        // Attempt to cast a vote before after the election has ended
+        await expect(election.connect(voter).castVote(voteCandidate, voteParty))
+            .to.be.revertedWith("The election has already ended so it is not possible to perform this action");
     })
 
-    it("simulate example election", async function () {
-        // Test of an example AMS election from
-        // https://en.wikipedia.org/wiki/Additional-member_system
-        const signers = await ethers.getSigners();
+    it("Only eligible voters can add votes", async function () {
+        // Candidate the voter will vote for
+        const voteCandidate = ethers.encodeBytes32String("Test Candidate1");
 
-        // Elect 54 Conservative constituencies with 5 party Conservative votes
-        // in each of the following constituencies 1st - 53rd and 36 votes in
-        // the 54th constituency
-        for (let i = 0; i < 53; i++) {
-            for (let j = 0; j < 5; j++) {
-                const voter = ethers.Wallet.createRandom().connect(ethers.provider);
-                await admin.sendTransaction({
-                    to: voter.address,
-                    value: ethers.parseEther("0.005")
-                });
+        // Party the voter will vote for
+        const voteParty = ethers.encodeBytes32String("Test Party2");
 
-                // Add 5 votes for conservative party for the first 53 constituencies
-                await election.giveRightToVote(voter.address, constituencies[i].constituencyName);
-                await election.connect(voter).vote(0, 0)
-            }
-        }
+        // Start the election
+        await election.startElection();
 
-        // Add 36 votes to the 54th constituency
-        for (let i = 0; i < 36; i++) {
-            const voter = ethers.Wallet.createRandom().connect(ethers.provider);
-            await admin.sendTransaction({
-                to: voter.address,
-                value: ethers.parseEther("0.005")
-            });
-            await election.giveRightToVote(voter.address, constituencies[53].constituencyName);
-            await election.connect(voter).vote(0, 0)
-        }
+        // Attempt to cast a vote as the admin who is not eligible to vote
+        await expect(election.castVote(voteCandidate, voteParty))
+            .to.be.revertedWith("This voter is not registered to vote");
 
-        // Confirm votes have been allocated for the conservative candidates
-        for (let i = 0; i < 53; i++) {
-            // Get candidates for current constituency
-            const constituencyCandidates = await election.getCandidatesByConstituency(constituencies[i].constituencyName)
-
-            // Conservative votes should equal 5
-            expect(constituencyCandidates[0].voteCount).to.equal(5);
-            expect(constituencyCandidates[1].voteCount).to.equal(0);
-            expect(constituencyCandidates[2].voteCount).to.equal(0);
-            expect(constituencyCandidates[3].voteCount).to.equal(0);
-        }
-
-        let constituencyCandidates = await election.getCandidatesByConstituency(constituencies[53].constituencyName)
-        // Conservative votes should equal 36
-        expect(constituencyCandidates[0].voteCount).to.equal(36);
-        expect(constituencyCandidates[1].voteCount).to.equal(0);
-        expect(constituencyCandidates[2].voteCount).to.equal(0);
-        expect(constituencyCandidates[3].voteCount).to.equal(0);
-
-
-        // Elect 11 Labour constituencies with 26 party Labour votes in each of
-        // the following constituencies 55th - 64th and 27 votes in the 65th
-        // constituency
-        for (let i = 0; i < 11; i++) {
-            for (let j = 0; j < 26; j++) {
-                const voter = ethers.Wallet.createRandom().connect(ethers.provider);
-                await admin.sendTransaction({
-                    to: voter.address,
-                    value: ethers.parseEther("0.005")
-                });
-
-                // Add vote for Labour party for the 55th - 65th constituencies
-                await election.giveRightToVote(voter.address, constituencies[i+54].constituencyName);
-                await election.connect(voter).vote(1, 1)
-            }
-        }
-
-        // Add an extra vote to the 65th constituency to take total to 27 votes
-        let voter = ethers.Wallet.createRandom().connect(ethers.provider);
-        await admin.sendTransaction({
-            to: voter.address,
-            value: ethers.parseEther("0.005")
-        });
-        await election.giveRightToVote(voter.address, constituencies[64].constituencyName);
-        await election.connect(voter).vote(1, 1)
-
-        // Confirm votes have been allocated for the labour candidates
-        for (let i = 0; i < 10; i++) {
-            // Get candidates for current constituency
-            const constituencyCandidates = await election.getCandidatesByConstituency(constituencies[i+54].constituencyName)
-
-            // Labour votes should equal 26
-            expect(constituencyCandidates[0].voteCount).to.equal(0);
-            expect(constituencyCandidates[1].voteCount).to.equal(26);
-            expect(constituencyCandidates[2].voteCount).to.equal(0);
-            expect(constituencyCandidates[3].voteCount).to.equal(0);
-        }
-
-        constituencyCandidates = await election.getCandidatesByConstituency(constituencies[64].constituencyName)
-        // Labour votes should equal 27
-        expect(constituencyCandidates[0].voteCount).to.equal(0);
-        expect(constituencyCandidates[1].voteCount).to.equal(27);
-        expect(constituencyCandidates[2].voteCount).to.equal(0);
-        expect(constituencyCandidates[3].voteCount).to.equal(0);
-
-        // Add 91 Liberal votes without electing any candidates to acheive
-        // popular representation of 13% by adding 11 votes to the 55th - 62nd
-        // constituencies and 3 votes to the 63rd constituency
-        for (let i = 0; i < 8; i++) {
-            for (let j = 0; j < 11; j++) {
-                const voter = ethers.Wallet.createRandom().connect(ethers.provider);
-                await admin.sendTransaction({
-                    to: voter.address,
-                    value: ethers.parseEther("0.005")
-                });
-
-                // Add vote for Liberal party for the 55th - 62nd constituencies
-                await election.giveRightToVote(voter.address, constituencies[i+54].constituencyName);
-                await election.connect(voter).vote(2, 2)
-            }
-        }
-
-        // Add 3 liberal votes to the 63rd constituency
-        for (let j = 0; j < 3; j++) {
-            const voter = ethers.Wallet.createRandom().connect(ethers.provider);
-            await admin.sendTransaction({
-                to: voter.address,
-                value: ethers.parseEther("0.005")
-            });
-
-            // Add vote for Liberal party for the 55th - 62nd constituencies
-            await election.giveRightToVote(voter.address, constituencies[62].constituencyName);
-            await election.connect(voter).vote(2, 2)
-        }
-
-        // Confirm votes have been allocated for the liberal candidates
-        for (let i = 0; i < 8; i++) {
-            // Get candidates for current constituency
-            const constituencyCandidates = await election.getCandidatesByConstituency(constituencies[i+54].constituencyName)
-
-            // Liberal votes should equal 11
-            expect(constituencyCandidates[0].voteCount).to.equal(0);
-            expect(constituencyCandidates[1].voteCount).to.equal(26);
-            expect(constituencyCandidates[2].voteCount).to.equal(11);
-            expect(constituencyCandidates[3].voteCount).to.equal(0);
-        }
-
-        constituencyCandidates = await election.getCandidatesByConstituency(constituencies[62].constituencyName)
-        // Liberal votes should equal 3
-        expect(constituencyCandidates[0].voteCount).to.equal(0);
-        expect(constituencyCandidates[1].voteCount).to.equal(26);
-        expect(constituencyCandidates[2].voteCount).to.equal(3);
-        expect(constituencyCandidates[3].voteCount).to.equal(0);
-        
-        // Elect 5 Reform seats with 4 votes in the 66th - 69th constituencies
-        // and 5 votes in the 70th constituency
-        for (let i = 0; i < 5; i++) {
-            for (let j = 0; j < 4; j++) {
-                const voter = ethers.Wallet.createRandom().connect(ethers.provider);
-                await admin.sendTransaction({
-                    to: voter.address,
-                    value: ethers.parseEther("0.005")
-                });
-
-                // Add vote for Reform party for the 66th - 70th constituencies
-                await election.giveRightToVote(voter.address, constituencies[i+65].constituencyName);
-                await election.connect(voter).vote(3, 3)
-            }
-        }
-
-        // Add an extra Reform vote to the 70th constituency
-        voter = ethers.Wallet.createRandom().connect(ethers.provider);
-        await admin.sendTransaction({
-            to: voter.address,
-            value: ethers.parseEther("0.005")
-        });
-        await election.giveRightToVote(voter.address, constituencies[69].constituencyName);
-        await election.connect(voter).vote(3, 3)
-
-        // Confirm votes have been allocated for the reform candidates
-        for (let i = 0; i < 4; i++) {
-            // Get candidates for current constituency
-            const constituencyCandidates = await election.getCandidatesByConstituency(constituencies[i+65].constituencyName)
-
-            // Reform votes should equal 4
-            expect(constituencyCandidates[0].voteCount).to.equal(0);
-            expect(constituencyCandidates[1].voteCount).to.equal(0);
-            expect(constituencyCandidates[2].voteCount).to.equal(0);
-            expect(constituencyCandidates[3].voteCount).to.equal(4);
-        }
-
-        constituencyCandidates = await election.getCandidatesByConstituency(constituencies[69].constituencyName)
-        // Reform votes should equal 5
-        expect(constituencyCandidates[0].voteCount).to.equal(0);
-        expect(constituencyCandidates[1].voteCount).to.equal(0);
-        expect(constituencyCandidates[2].voteCount).to.equal(0);
-        expect(constituencyCandidates[3].voteCount).to.equal(5);
-
-        await election.endElection()
-
-        // Confirm constituency seats and popular vote
-        await election.calculateConstituencyWinners();
-        await election.calculatePopularVote();
-
-        let parties = await election.getPartys();
-
-        // Confirm the constituency seats
-        expect(parties[0].regionalSeats).to.equal(54);
-        expect(parties[1].regionalSeats).to.equal(11);
-        expect(parties[2].regionalSeats).to.equal(0);
-        expect(parties[3].regionalSeats).to.equal(5);
-
-        // Confirm the popular vote
-        expect(parties[0].popularVote).to.equal(43);
-        expect(parties[1].popularVote).to.equal(41);
-        expect(parties[2].popularVote).to.equal(13);
-        expect(parties[3].popularVote).to.equal(3);
-
-        // Confirm the additional seats
-        await election.calculateAdditionalSeats();
-        parties = await election.getPartys();
-
-        expect(parties[0].additionalSeats).to.equal(0);
-        expect(parties[1].additionalSeats).to.equal(22);
-        expect(parties[2].additionalSeats).to.equal(7);
-        expect(parties[3].additionalSeats).to.equal(0);
-
-        // Confirm the final number of seats
-        await election.calculateFinalResults();
-        parties = await election.getPartys();
-
-        expect(parties[0].numberOfSeats).to.equal(54);
-        expect(parties[1].numberOfSeats).to.equal(33);
-        expect(parties[2].numberOfSeats).to.equal(7);
-        expect(parties[3].numberOfSeats).to.equal(5);
+        // Cast a vote as a valid voter
+        await expect(election.connect(voter).castVote(voteCandidate, voteParty))
+            .to.emit(election, "VoteCast")
+            .withArgs(voter.address);
     })
 
+    it("Voter cannot cast more than one vote", async function () {
+        // Candidate the voter will vote for
+        const voteCandidate = ethers.encodeBytes32String("Test Candidate1");
 
-    
+        // Party the voter will vote for
+        const voteParty = ethers.encodeBytes32String("Test Party2");
+
+        // Start the election
+        await election.startElection();
+
+        // Cast a vote as a valid voter
+        await expect(election.connect(voter).castVote(voteCandidate, voteParty))
+            .to.emit(election, "VoteCast")
+            .withArgs(voter.address);
+
+        // Attempt to cast a second vote
+        await expect(election.connect(voter).castVote(voteCandidate, voteParty))
+            .to.be.revertedWith("You have already voted")
+    })
+
+    it("Voter can only vote for candidates that exist", async function () {
+        // Invalid candidate the voter will vote for
+        let voteCandidate = ethers.encodeBytes32String("Test Candidate4");
+
+        // Party the voter will vote for
+        const voteParty = ethers.encodeBytes32String("Test Party2");
+
+        // Start the election
+        await election.startElection();
+
+        // Attempt to cast a vote for a candidate which does not exist
+        await expect(election.connect(voter).castVote(voteCandidate, voteParty))
+            .to.be.revertedWith("This candidate does not exist");
+
+
+        // Valid candidate the voter will vote for
+        voteCandidate = ethers.encodeBytes32String("Test Candidate1");
+        // Cast a vote as a valid voter
+        await expect(election.connect(voter).castVote(voteCandidate, voteParty))
+            .to.emit(election, "VoteCast")
+            .withArgs(voter.address);
+    })
+
+    it("Voter can only vote for parties that exist", async function () {
+        // Valid candidate the voter will vote for
+        const voteCandidate = ethers.encodeBytes32String("Test Candidate1");
+
+        // Invalid Party the voter will vote for
+        let voteParty = ethers.encodeBytes32String("Test Party4");
+
+        // Start the election
+        await election.startElection();
+
+        // Attempt to cast a vote for a candidate which does not exist
+        await expect(election.connect(voter).castVote(voteCandidate, voteParty))
+            .to.be.revertedWith("This party does not exist");
+
+
+        // Valid party the voter will vote for
+        voteParty = ethers.encodeBytes32String("Test Party2");
+        // Cast a vote as a valid voter
+        await expect(election.connect(voter).castVote(voteCandidate, voteParty))
+            .to.emit(election, "VoteCast")
+            .withArgs(voter.address);
+    })
+
+    it("Voter must be recorded as having voted once a vote is cast", async function () {
+        // Candidate the voter will vote for
+        const voteCandidate = ethers.encodeBytes32String("Test Candidate1");
+
+        // Party the voter will vote for
+        const voteParty = ethers.encodeBytes32String("Test Party2");
+
+        // Start election
+        await election.startElection();
+
+        // Cast a valid vote
+        await expect(election.connect(voter).castVote(voteCandidate, voteParty))
+            .to.emit(election, "VoteCast")
+            .withArgs(voter.address);
+    })
+})
+
+describe("Additional Member System - Start Election", function () {
+    // Test constituency name
+    const constituencyName = ethers.encodeBytes32String("Test Constituency");
+
+    beforeEach(async function () {
+        [admin, voter] = await ethers.getSigners();
+
+        Election = await ethers.getContractFactory("AMS", admin);
+        election = await Election.deploy(1);
+
+        await election.waitForDeployment();
+
+        // Add a constituency before the election has started
+        await expect(election.addConstituency(constituencyName))
+            .to.emit(election, "ConstituencyAdded")
+            .withArgs(constituencyName);
+    })
+
+    it("Only the admin can start an election", async function () {
+        // Attempt to start the election as a non admin
+        await expect(election.connect(voter).startElection())
+            .to.be.revertedWith("Only the election admin can perform this action");
+
+        // Start the election as an admin
+        await expect(election.startElection())
+            .to.emit(election, "ElectionStarted");
+    })
+
+    it("Election can only be started if the election has not already commenced", async function () {
+        // Start the election
+        await expect(election.startElection())
+            .to.emit(election, "ElectionStarted");
+
+        // Attempt to start the election again
+        await expect(election.startElection())
+            .to.be.revertedWith("The election has already started so it is not possible to perform this action");
+    })
+
+    it("Election should be marked as started", async function () {
+        // Start the election
+        await expect(election.startElection())
+            .to.emit(election, "ElectionStarted");
+    })
+
+    it("Election started event is emitted", async function () {
+        // Start the election
+        await expect(election.startElection())
+            .to.emit(election, "ElectionStarted");
+    })
+})
+
+describe("Additional Member System - End Election", function () {
+    // Test constituency name
+    const constituencyName = ethers.encodeBytes32String("Test Constituency");
+
+    beforeEach(async function () {
+        [admin, voter] = await ethers.getSigners();
+
+        Election = await ethers.getContractFactory("AMS", admin);
+        election = await Election.deploy(1);
+
+        await election.waitForDeployment();
+
+        // Add a constituency before the election has started
+        await expect(election.addConstituency(constituencyName))
+            .to.emit(election, "ConstituencyAdded")
+            .withArgs(constituencyName);
+
+        // Candidate 1
+        // Test candidate name
+        let candidateName = ethers.encodeBytes32String("Test Candidate1");
+        // Test party name
+        let partyName = ethers.encodeBytes32String("Test Party1");
+
+        // Add a constituency candidate as an admin
+        await expect(election.addConstituencyCandidate(candidateName, partyName, constituencyName))
+            .to.emit(election, "CandidateAdded");
+    })
+
+    it("Only the admin can end the election", async function () {
+        // Start the election
+        await election.startElection()
+
+        // Attempt to end the election as a non admin
+        await expect(election.connect(voter).endElection())
+            .to.be.revertedWith("Only the election admin can perform this action");
+
+        // End the election
+        await expect(election.endElection())
+            .to.emit(election, "ElectionEnded");
+    })
+
+    it("Election can only be ended after the election has started", async function () {
+        // Attempt to end the election before the election has started
+        await expect(election.endElection())
+        .to.be.revertedWith("The election has not started so it is not possible to perform this action");
+
+        // Start the election
+        await election.startElection()
+
+        // End the election
+        await expect(election.endElection())
+        .to.emit(election, "ElectionEnded");
+    })
+
+    it("Election cannot be ended after the election has already ended", async function () {
+        // Start the election
+        await election.startElection()
+
+        // End the election
+        await expect(election.endElection())
+        .to.emit(election, "ElectionEnded");
+
+        // End the election
+        await expect(election.endElection())
+        .to.be.revertedWith("The election has already ended so it is not possible to perform this action");
+    })
+
+    it("Election must be marked as ended once the election is ended", async function () {
+        // Start the election
+        await election.startElection()
+
+        // End the election
+        await expect(election.endElection())
+            .to.emit(election, "ElectionEnded");
+    })
 })
