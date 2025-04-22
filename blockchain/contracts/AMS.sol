@@ -2,6 +2,9 @@
 // https://www.electoral-reform.org.uk/voting-systems/types-of-voting-system/additional-member-system/
 pragma solidity ^0.8.0;
 
+// *** Used for debugging ***
+import "hardhat/console.sol";
+
 /// @title Additional Member System election contract
 /// @author Adam G. Seidel
 contract AMS {
@@ -217,6 +220,10 @@ contract AMS {
         constituencyIndexs[constituencyName] = constituencies.length - 1;
         // Record that the constituency exists in the constituency existance mapping
         constituencyExists[constituencyName] = true;
+
+        // Record that a new constitnecy has been added to the total
+        // constitunecy count
+        numberOfConstituencies += 1;
 
         // Record that a new constituency has been added
         emit ConstituencyAdded(constituencyName);
@@ -453,7 +460,10 @@ contract AMS {
             Party storage party = electionParties[i];
 
             // Calculate and assign the popular vote for the current party
-            party.popularVote = (party.votes * 100) / totalVotes;
+            // Divison by zero guard
+            if (totalVotes > 0) {
+                party.popularVote = (party.votes * 100) / totalVotes;
+            }
         }
 
         // Calculate the number of regional seats that are to be allocated
@@ -506,7 +516,7 @@ contract AMS {
 
     /// @notice Calculate the election results
     function calculateElectionResults() 
-        internal
+        public
         onlyAdmin
         electionHasEnded
         resultsHaveNotBeenCalculated
