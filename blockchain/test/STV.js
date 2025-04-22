@@ -1308,7 +1308,6 @@ describe("Single Transferable Vote - End Election", function () {
         // Election Winner Event
         expect(eventLog[10].fragment.name).to.equal("ElectionWinner");
         expect(eventLog[10].args[0]).to.equal(party1, 1);
-
     })
 })
 
