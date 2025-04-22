@@ -146,7 +146,7 @@ contract FPTP {
             "This candidate already exists");
         _;
     }
-        modifier resultsHaveBeenCalculated() {
+    modifier resultsHaveBeenCalculated() {
         require(resultsCalculated,
             "The election results have not been calculated so it is not possible to perform this action");
         _;
@@ -180,7 +180,8 @@ contract FPTP {
         returns (bool)
     {
         // Ensure the constituency name is not empty
-        require(constituencyName != bytes32(0), "Constituency name cannot be empty");
+        require(constituencyName != bytes32(0), 
+            "Constituency name cannot be empty");
 
         // Add the new constituency
         constituencies.push();
@@ -221,7 +222,7 @@ contract FPTP {
             party: candidateParty,
             // Record the constituency that the new candidate is standing in
             constituency: candidateConstituency,
-            // Initialise the number of votes for the new candidate to o
+            // Initialise the number of votes for the new candidate to 0
             votes: 0
         }));
 
@@ -261,7 +262,7 @@ contract FPTP {
     // Voter Functions
     /// @notice Add a new voter to the election
     /// @param voterAddress The address of the new voter
-    /// @param voterConstituency The constituency that the new voter is eligible to vote in
+    /// @param voterConstituency The constituency (bytes32) that the new voter is eligible to vote in
     function addVoter(address voterAddress, bytes32 voterConstituency) 
         external
         onlyAdmin
@@ -294,7 +295,7 @@ contract FPTP {
     }
 
     /// @notice Cast a vote
-    /// @param candidateName The name of the candidate that the voter intends to vote for
+    /// @param candidateName The name (bytes32) of the candidate that the voter intends to vote for
     function castVote(bytes32 candidateName)
         external
         electionHasStarted
@@ -351,16 +352,17 @@ contract FPTP {
     {
         // Add error handling for when no candidates or constituencies exist?
 
+        // Calculate the winning candidate for each constituency
         for (uint i = 0; i < constituencies.length; i++) {
             // Retrieve the current constituencies data
             Constituency storage constituency = constituencies[i];
 
-            // Maximumum number of votes for a candidate in this constituency
+            // Maximum number of votes for a candidate in this constituency
             uint maxVotes = 0;
             // The index of the candidate to have won in this constituency
             uint winningCandidateIndex = 0;
 
-            // Find the candidate with the most votes
+            // Find the candidate with the most votes in the current constituency
             for (uint j = 0; j < constituency.candidates.length; j++) {
                 if (constituency.candidates[j].votes > maxVotes) {
                     // Record the number of votes of the top candidate so far
@@ -370,14 +372,16 @@ contract FPTP {
                 }
             }
 
-            // Record the elected candidate for that constituency
+            // Record the elected candidate for the current constituency
             constituency.electedCandidateIndex = winningCandidateIndex;
 
-            // Record the winner of this constituency
-            // Record the elected candidate index for the constituency
+            // Record the elected candidate index for the current constituency
             constituency.electedCandidateIndex = winningCandidateIndex;
 
-            emit ConstituencyWinner(constituency.name, constituency.candidates[winningCandidateIndex].name, constituency.candidates[winningCandidateIndex].party);
+            // Record the elected candidate for the current constiteuncy
+            emit ConstituencyWinner(constituency.name, 
+                constituency.candidates[winningCandidateIndex].name,
+                constituency.candidates[winningCandidateIndex].party);
         }
 
         // Record that all constituency winners have been calculated
@@ -419,12 +423,18 @@ contract FPTP {
 
         // Record the number of elected seats for each party in the election
         for (uint i = 0; i < electionParties.length; i++) {
+            // Retrieve the current parties information
             Party storage party = electionParties[i];
 
+            // Record the number of seats elected for the current party
             emit PartyResults(party.name, party.electedSeats);
 
+            // New winning party seen
             if (party.electedSeats > maxElectedSeats) {
+                // Record the index of the new party with the most elected
+                // seats
                 winningPartyIndex = i;
+                // Record the new most elected seats seen
                 maxElectedSeats = party.electedSeats;
             }
         }
