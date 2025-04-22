@@ -439,9 +439,12 @@ contract FPTP {
             }
         }
 
+        // At least one party in the election
         if (electionParties.length > 0) {
+            // Retrieve the winning parties information
             Party storage winningParty = electionParties[winningPartyIndex];
 
+            // Record the overall winning party of the election
             emit ElectionWinner(winningParty.name, winningParty.electedSeats);
         }
     }

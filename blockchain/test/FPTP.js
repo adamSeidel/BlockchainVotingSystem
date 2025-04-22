@@ -407,7 +407,6 @@ describe("First Past the Post - Cast Vote", function () {
         .withArgs(voter.address, constituencyName)
     })
 
-
     it("Vote must be cast", async function () {
         // Candidate the voter will vote for
         const voteCandidate = ethers.encodeBytes32String("Test Candidate1");
@@ -487,7 +486,7 @@ describe("First Past the Post - Cast Vote", function () {
             .to.be.revertedWith("You have already voted")
     })
 
-    it("Voter can only vote candidates that exist", async function () {
+    it("Voter can only vote for candidates that exist", async function () {
         // Invalid candidate the voter will vote for
         let voteCandidate = ethers.encodeBytes32String("Test Candidate4");
 
@@ -531,7 +530,7 @@ describe("First Past the Post - Start Election", function () {
         await election.waitForDeployment();
     })
 
-    it("Only the admin can start and election", async function () {
+    it("Only the admin can start an election", async function () {
         // Attempt to start the election as a non admin
         await expect(election.connect(voter).startElection())
             .to.be.revertedWith("Only the election admin can perform this action");
