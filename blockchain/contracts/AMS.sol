@@ -93,8 +93,9 @@ contract AMS {
     event CandidateAdded(bytes32 candidateName, bytes32 party, bytes32 constituencyName);
     event PartyAdded(bytes32 partyName);
     event VoterAdded(address voterAddress, bytes32 constituencyName);
-    event VoteCast(address voterAddress);
+    event VoteCast(address voterAddress, bytes32 candidateName, bytes32 partyName);
     event ConstituencyWinner(bytes32 constituencyName, bytes32 winningCandidateName, bytes32 winningCandidatePartyName);
+    event PartyConstituencyResults(bytes32 party, uint constituencySeats);
     event AllConstituencyWinnersCalculated();
     event AdditionalSeatsAllocated(bytes32 partyName, uint numberOfSeats);
     event AllAdditionalSeatsAllocated();
@@ -373,7 +374,7 @@ contract AMS {
         voter.voted = true;
 
         // Record that the voter has cast thier vote
-        emit VoteCast(msg.sender);
+        emit VoteCast(msg.sender, candidateName, partyName);
 
         return true;
     }
@@ -442,6 +443,15 @@ contract AMS {
                 constituency.candidates[winningCandidateIndex].party);
         }
 
+        // Record the number of seats elected for each party by the
+        // constituency vote
+        for (uint i = 0; i < electionParties.length; i++) {
+            // Retrieve the current party's information
+            Party storage party = electionParties[i];
+
+            emit PartyConstituencyResults(party.name, party.regionalSeats);
+        }
+
         // Record that all constituency winners have been calculated
         emit AllConstituencyWinnersCalculated();
     }
@@ -462,7 +472,8 @@ contract AMS {
             // Calculate and assign the popular vote for the current party
             // Divison by zero guard
             if (totalVotes > 0) {
-                party.popularVote = (party.votes * 100) / totalVotes;
+                // 8 s.f accuracy
+                party.popularVote = (party.votes * 10000000) / totalVotes;
             }
         }
 
@@ -482,7 +493,8 @@ contract AMS {
 
             // Calculate the number of seats the party would have if all seats
             // were allocated based on the popular vote share
-            party.proportionalSeatNumber = party.popularVote * numberOfConstituencies / 100;
+            // 8 s.f accruacy with nearest integer rounding
+            party.proportionalSeatNumber = (party.popularVote * numberOfConstituencies + 5000000) / 10000000;
 
             // Party has been elected less seats from the constituency vote
             // than their popualar vote share warrants
@@ -503,7 +515,8 @@ contract AMS {
             // by their popular vote share
             if (party.proportionalSeatNumber > party.regionalSeats) {
                 // Calculate the number of additional seats due to the party
-                party.additionalSeats = nationalSeats * (party.popularVote * 100 / popularVoteShare) / 100;
+                // 8 s.f accruacy with nearest integer rounding
+                party.additionalSeats = (nationalSeats * (party.popularVote * 10000000 / popularVoteShare) + 5000000) / 10000000;
 
                 // Record that the party has been alloacted additional seats
                 emit AdditionalSeatsAllocated(party.name, party.additionalSeats);
