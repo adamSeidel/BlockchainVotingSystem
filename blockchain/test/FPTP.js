@@ -417,7 +417,7 @@ describe("First Past the Post - Cast Vote", function () {
         // Cast a valid vote
         await expect(election.connect(voter).castVote(voteCandidate))
             .to.emit(election, "VoteCast")
-            .withArgs(voter.address);
+            .withArgs(voter.address, voteCandidate);
     })
 
     it("Votes can only be added once the election has started", async function () {
@@ -434,7 +434,7 @@ describe("First Past the Post - Cast Vote", function () {
         // Cast a vote once the election has started
         await expect(election.connect(voter).castVote(voteCandidate))
             .to.emit(election, "VoteCast")
-            .withArgs(voter.address);
+            .withArgs(voter.address, voteCandidate);
     })
 
     it("Votes can only be added before the election has ended", async function () {
@@ -466,7 +466,7 @@ describe("First Past the Post - Cast Vote", function () {
         // Cast a vote as a valid voter
         await expect(election.connect(voter).castVote(voteCandidate))
             .to.emit(election, "VoteCast")
-            .withArgs(voter.address);
+            .withArgs(voter.address, voteCandidate);
     })
 
     it("Voter cannot cast more than one vote", async function () {
@@ -479,7 +479,7 @@ describe("First Past the Post - Cast Vote", function () {
         // Cast a vote as a valid voter
         await expect(election.connect(voter).castVote(voteCandidate))
             .to.emit(election, "VoteCast")
-            .withArgs(voter.address);
+            .withArgs(voter.address, voteCandidate);
 
         // Attempt to cast a second vote
         await expect(election.connect(voter).castVote(voteCandidate))
@@ -503,7 +503,7 @@ describe("First Past the Post - Cast Vote", function () {
         // Cast a vote as a valid voter
         await expect(election.connect(voter).castVote(voteCandidate))
             .to.emit(election, "VoteCast")
-            .withArgs(voter.address);
+            .withArgs(voter.address, voteCandidate);
     })
 
     it("Voter must be recorded as having voted once a vote is cast", async function () {
@@ -516,7 +516,7 @@ describe("First Past the Post - Cast Vote", function () {
         // Cast a valid vote
         await expect(election.connect(voter).castVote(voteCandidate))
             .to.emit(election, "VoteCast")
-            .withArgs(voter.address);
+            .withArgs(voter.address, voteCandidate);
     })
 })
 
@@ -671,22 +671,22 @@ describe("First Past the Post - Calculate Election Results", function () {
         // Cast vote for Conservative Party as admin voter
         await expect(election.castVote(candidate1))
             .to.emit(election, "VoteCast")
-            .withArgs(admin.address);
+            .withArgs(admin.address, candidate1);
 
         // Cast vote for Conservative Party as voter
         await expect(election.connect(voter).castVote(candidate1))
             .to.emit(election, "VoteCast")
-            .withArgs(voter.address);
+            .withArgs(voter.address, candidate1);
 
         // Cast vote for Labour Party as voter2
         await expect(election.connect(voter2).castVote(candidate2))
         .to.emit(election, "VoteCast")
-        .withArgs(voter2.address);
+        .withArgs(voter2.address, candidate2);
 
         // Cast vote for Reform Party as vote3
         await expect(election.connect(voter3).castVote(candidate3))
         .to.emit(election, "VoteCast")
-        .withArgs(voter3.address);
+        .withArgs(voter3.address, candidate3);
 
         // End election
         await expect(election.endElection())
@@ -872,7 +872,7 @@ describe("First Past the Post - Calculate Election Results", function () {
 
             await expect(election.connect(voterWallet).castVote(candidateName))
                 .to.emit(election, "VoteCast")
-                .withArgs(voterWallet.address);
+                .withArgs(voterWallet.address, candidateName);
         }
         // 5 votes for Anna - Labour
         candidateName = ethers.encodeBytes32String("Anna")
@@ -881,7 +881,7 @@ describe("First Past the Post - Calculate Election Results", function () {
 
             await expect(election.connect(voterWallet).castVote(candidateName))
                 .to.emit(election, "VoteCast")
-                .withArgs(voterWallet.address);
+                .withArgs(voterWallet.address, candidateName);
         }
         // 9 votes for Bill - Reform
         candidateName = ethers.encodeBytes32String("Bill")
@@ -890,7 +890,7 @@ describe("First Past the Post - Calculate Election Results", function () {
 
             await expect(election.connect(voterWallet).castVote(candidateName))
                 .to.emit(election, "VoteCast")
-                .withArgs(voterWallet.address);
+                .withArgs(voterWallet.address, candidateName);
         }
 
         // Cast Knaresborough Votes
@@ -901,7 +901,7 @@ describe("First Past the Post - Calculate Election Results", function () {
 
             await expect(election.connect(voterWallet).castVote(candidateName))
                 .to.emit(election, "VoteCast")
-                .withArgs(voterWallet.address);
+                .withArgs(voterWallet.address, candidateName);
         }
         // 4 votes for Hope - Labour
         candidateName = ethers.encodeBytes32String("Hope")
@@ -910,7 +910,7 @@ describe("First Past the Post - Calculate Election Results", function () {
 
             await expect(election.connect(voterWallet).castVote(candidateName))
                 .to.emit(election, "VoteCast")
-                .withArgs(voterWallet.address);
+                .withArgs(voterWallet.address, candidateName);
         }
         // 3 votes for Dave - Reform
         candidateName = ethers.encodeBytes32String("Dave")
@@ -919,7 +919,7 @@ describe("First Past the Post - Calculate Election Results", function () {
 
             await expect(election.connect(voterWallet).castVote(candidateName))
                 .to.emit(election, "VoteCast")
-                .withArgs(voterWallet.address);
+                .withArgs(voterWallet.address, candidateName);
         }
 
         // Cast York Votes
@@ -930,7 +930,7 @@ describe("First Past the Post - Calculate Election Results", function () {
 
             await expect(election.connect(voterWallet).castVote(candidateName))
                 .to.emit(election, "VoteCast")
-                .withArgs(voterWallet.address);
+                .withArgs(voterWallet.address, candidateName);
         }
         // 10 votes for Garry - Labour
         candidateName = ethers.encodeBytes32String("Garry")
@@ -939,7 +939,7 @@ describe("First Past the Post - Calculate Election Results", function () {
 
             await expect(election.connect(voterWallet).castVote(candidateName))
                 .to.emit(election, "VoteCast")
-                .withArgs(voterWallet.address);
+                .withArgs(voterWallet.address, candidateName);
         }
         // 2 votes for Finn - Reform
         candidateName = ethers.encodeBytes32String("Finn")
@@ -948,7 +948,7 @@ describe("First Past the Post - Calculate Election Results", function () {
 
             await expect(election.connect(voterWallet).castVote(candidateName))
                 .to.emit(election, "VoteCast")
-                .withArgs(voterWallet.address);
+                .withArgs(voterWallet.address, candidateName);
         }
 
         // Cast Leeds Votes
@@ -959,7 +959,7 @@ describe("First Past the Post - Calculate Election Results", function () {
 
             await expect(election.connect(voterWallet).castVote(candidateName))
                 .to.emit(election, "VoteCast")
-                .withArgs(voterWallet.address);
+                .withArgs(voterWallet.address, candidateName);
         }
         // 9 votes for Tim - Labour
         candidateName = ethers.encodeBytes32String("Tim")
@@ -968,7 +968,7 @@ describe("First Past the Post - Calculate Election Results", function () {
 
             await expect(election.connect(voterWallet).castVote(candidateName))
                 .to.emit(election, "VoteCast")
-                .withArgs(voterWallet.address);
+                .withArgs(voterWallet.address, candidateName);
         }
         // 10 votes for Jake - Reform
         candidateName = ethers.encodeBytes32String("Jake")
@@ -977,7 +977,7 @@ describe("First Past the Post - Calculate Election Results", function () {
 
             await expect(election.connect(voterWallet).castVote(candidateName))
                 .to.emit(election, "VoteCast")
-                .withArgs(voterWallet.address);
+                .withArgs(voterWallet.address, candidateName);
         }
 
         // Confirm the correct events are emitted
@@ -1161,7 +1161,7 @@ describe.skip("First Past the Post - Simulate an Aberafan Maesteg constituency e
 
                 await expect(election.connect(voterWallet).castVote(candidateName))
                     .to.emit(election, "VoteCast")
-                    .withArgs(voterWallet.address);
+                    .withArgs(voterWallet.address, voteCandidate);
 
                 k += 1;
             }
