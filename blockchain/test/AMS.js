@@ -419,7 +419,7 @@ describe("Additional Member System - Cast Vote", function () {
         // Cast a valid vote
         await expect(election.connect(voter).castVote(voteCandidate, voteParty))
             .to.emit(election, "VoteCast")
-            .withArgs(voter.address);
+            .withArgs(voter.address, voteCandidate, voteParty);
     })
 
     it("Votes can only be added once the election has started", async function () {
@@ -439,7 +439,7 @@ describe("Additional Member System - Cast Vote", function () {
         // Cast a vote once the election has started
         await expect(election.connect(voter).castVote(voteCandidate, voteParty))
             .to.emit(election, "VoteCast")
-            .withArgs(voter.address);
+            .withArgs(voter.address, voteCandidate, voteParty);
     })
 
     it("Votes can only be added before the election has ended", async function () {
@@ -477,7 +477,7 @@ describe("Additional Member System - Cast Vote", function () {
         // Cast a vote as a valid voter
         await expect(election.connect(voter).castVote(voteCandidate, voteParty))
             .to.emit(election, "VoteCast")
-            .withArgs(voter.address);
+            .withArgs(voter.address, voteCandidate, voteParty);
     })
 
     it("Voter cannot cast more than one vote", async function () {
@@ -493,7 +493,7 @@ describe("Additional Member System - Cast Vote", function () {
         // Cast a vote as a valid voter
         await expect(election.connect(voter).castVote(voteCandidate, voteParty))
             .to.emit(election, "VoteCast")
-            .withArgs(voter.address);
+            .withArgs(voter.address, voteCandidate, voteParty);
 
         // Attempt to cast a second vote
         await expect(election.connect(voter).castVote(voteCandidate, voteParty))
@@ -520,7 +520,7 @@ describe("Additional Member System - Cast Vote", function () {
         // Cast a vote as a valid voter
         await expect(election.connect(voter).castVote(voteCandidate, voteParty))
             .to.emit(election, "VoteCast")
-            .withArgs(voter.address);
+            .withArgs(voter.address, voteCandidate, voteParty);
     })
 
     it("Voter can only vote for parties that exist", async function () {
@@ -543,7 +543,7 @@ describe("Additional Member System - Cast Vote", function () {
         // Cast a vote as a valid voter
         await expect(election.connect(voter).castVote(voteCandidate, voteParty))
             .to.emit(election, "VoteCast")
-            .withArgs(voter.address);
+            .withArgs(voter.address, voteCandidate, voteParty);
     })
 
     it("Voter must be recorded as having voted once a vote is cast", async function () {
@@ -559,7 +559,7 @@ describe("Additional Member System - Cast Vote", function () {
         // Cast a valid vote
         await expect(election.connect(voter).castVote(voteCandidate, voteParty))
             .to.emit(election, "VoteCast")
-            .withArgs(voter.address);
+            .withArgs(voter.address, voteCandidate, voteParty);
     })
 })
 
@@ -745,22 +745,22 @@ describe("Additional Member System - Calculate Election Results", function () {
         // Cast vote for Conservative Party as admin voter
         await expect(election.castVote(candidate1, candidate1))
             .to.emit(election, "VoteCast")
-            .withArgs(admin.address);
+            .withArgs(admin.address, candidate1, candidate1);
 
         // Cast vote for Conservative Party as voter
         await expect(election.connect(voter).castVote(candidate1, candidate1))
             .to.emit(election, "VoteCast")
-            .withArgs(voter.address);
+            .withArgs(voter.address, candidate1, candidate1);
 
         // Cast vote for Labour Party as voter2
         await expect(election.connect(voter2).castVote(candidate2, candidate2))
         .to.emit(election, "VoteCast")
-        .withArgs(voter2.address);
+        .withArgs(voter2.address, candidate2, candidate2);
 
         // Cast vote for Reform Party as vote3
         await expect(election.connect(voter3).castVote(candidate3, candidate3))
         .to.emit(election, "VoteCast")
-        .withArgs(voter3.address);
+        .withArgs(voter3.address, candidate3, candidate3);
 
         // End election
         await expect(election.endElection())
@@ -970,7 +970,7 @@ describe("Additional Member System - Calculate Election Results", function () {
 
                 await expect(election.connect(voterWallet).castVote(party1, party1))
                     .to.emit(election, "VoteCast")
-                    .withArgs(voterWallet.address);
+                    .withArgs(voterWallet.address, party1, party1);
 
                 conservativeIndex += 1;
             }
@@ -981,7 +981,7 @@ describe("Additional Member System - Calculate Election Results", function () {
 
                 await expect(election.connect(voterWallet).castVote(party1, party1))
                     .to.emit(election, "VoteCast")
-                    .withArgs(voterWallet.address);
+                    .withArgs(voterWallet.address, party1, party1);
 
                 conservativeIndex += 1;
         }
@@ -996,7 +996,7 @@ describe("Additional Member System - Calculate Election Results", function () {
 
                 await expect(election.connect(voterWallet).castVote(party2, party2))
                     .to.emit(election, "VoteCast")
-                    .withArgs(voterWallet.address);
+                    .withArgs(voterWallet.address, party2, party2);
 
                 labourIndex += 1;
             }
@@ -1006,7 +1006,7 @@ describe("Additional Member System - Calculate Election Results", function () {
 
         await expect(election.connect(voterWallet).castVote(party2, party2))
             .to.emit(election, "VoteCast")
-            .withArgs(voterWallet.address);
+            .withArgs(voterWallet.address, party2, party2);
 
         labourIndex += 1;
 
@@ -1020,7 +1020,7 @@ describe("Additional Member System - Calculate Election Results", function () {
 
                 await expect(election.connect(voterWallet).castVote(party3, party3))
                     .to.emit(election, "VoteCast")
-                    .withArgs(voterWallet.address);
+                    .withArgs(voterWallet.address, party3, party3);
 
                 liberalIndex += 1;
             }
@@ -1031,7 +1031,7 @@ describe("Additional Member System - Calculate Election Results", function () {
 
                 await expect(election.connect(voterWallet).castVote(party3, party3))
                     .to.emit(election, "VoteCast")
-                    .withArgs(voterWallet.address);
+                    .withArgs(voterWallet.address, party3, party3);
 
                 liberalIndex += 1;
         }
@@ -1045,7 +1045,7 @@ describe("Additional Member System - Calculate Election Results", function () {
 
                 await expect(election.connect(voterWallet).castVote(party4, party4))
                     .to.emit(election, "VoteCast")
-                    .withArgs(voterWallet.address);
+                    .withArgs(voterWallet.address, party4, party4);
 
                 reformIndex += 1;
             }
@@ -1055,7 +1055,7 @@ describe("Additional Member System - Calculate Election Results", function () {
 
         await expect(election.connect(voterWallet).castVote(party4, party4))
             .to.emit(election, "VoteCast")
-            .withArgs(voterWallet.address);
+            .withArgs(voterWallet.address, party4, party4);
 
         reformIndex += 1;
 
