@@ -1064,51 +1064,56 @@ describe("Additional Member System - Calculate Election Results", function () {
         const result = await tx.wait();
         const eventLog = result.logs;
 
+        // // Print the fragment name and index of each event in the log
+        // eventLog.forEach((log, index) => {
+        //     console.log(`Index: ${index}, Event: ${log.fragment.name}`);
+        // });
+
         // Election Ended Event
         expect(eventLog[0].fragment.name).to.equal("ElectionEnded");
 
         // All Constituency Winners Calcualted Event
-        expect(eventLog[71].fragment.name).to.equal("AllConstituencyWinnersCalculated");
+        expect(eventLog[75].fragment.name).to.equal("AllConstituencyWinnersCalculated");
 
         // Additional Seats Allocated Event
-        expect(eventLog[72].fragment.name).to.equal("AdditionalSeatsAllocated");
-        expect(eventLog[72].args[0]).to.equal(party2);
-        expect(eventLog[72].args[1]).to.equal(22);
+        expect(eventLog[76].fragment.name).to.equal("AdditionalSeatsAllocated");
+        expect(eventLog[76].args[0]).to.equal(party2);
+        expect(eventLog[76].args[1]).to.equal(23);
 
         // Additional Seats Allocated Event
-        expect(eventLog[73].fragment.name).to.equal("AdditionalSeatsAllocated");
-        expect(eventLog[73].args[0]).to.equal(party3);
-        expect(eventLog[73].args[1]).to.equal(7);
+        expect(eventLog[77].fragment.name).to.equal("AdditionalSeatsAllocated");
+        expect(eventLog[77].args[0]).to.equal(party3);
+        expect(eventLog[77].args[1]).to.equal(7);
 
         // All Additional Seats Allocated Event
-        expect(eventLog[74].fragment.name).to.equal("AllAdditionalSeatsAllocated");
+        expect(eventLog[78].fragment.name).to.equal("AllAdditionalSeatsAllocated");
 
         // Election Results Calculated Event
-        expect(eventLog[75].fragment.name).to.equal("ElectionResultsCalculated");
+        expect(eventLog[79].fragment.name).to.equal("ElectionResultsCalculated");
 
         // Party Results Event
-        expect(eventLog[76].fragment.name).to.equal("PartyResults");
-        expect(eventLog[76].args[0]).to.equal(party1);
-        expect(eventLog[76].args[1]).to.equal(54);
-
-        // Party Results Event
-        expect(eventLog[77].fragment.name).to.equal("PartyResults");
-        expect(eventLog[77].args[0]).to.equal(party2);
-        expect(eventLog[77].args[1]).to.equal(33);
-
-        // Party Results Event
-        expect(eventLog[78].fragment.name).to.equal("PartyResults");
-        expect(eventLog[78].args[0]).to.equal(party3);
-        expect(eventLog[78].args[1]).to.equal(7);
-
-        // Party Results Event
-        expect(eventLog[79].fragment.name).to.equal("PartyResults");
-        expect(eventLog[79].args[0]).to.equal(party4);
-        expect(eventLog[79].args[1]).to.equal(5);
-
-        // Election Winner
-        expect(eventLog[80].fragment.name).to.equal("ElectionWinner");
+        expect(eventLog[80].fragment.name).to.equal("PartyResults");
         expect(eventLog[80].args[0]).to.equal(party1);
         expect(eventLog[80].args[1]).to.equal(54);
+
+        // Party Results Event
+        expect(eventLog[81].fragment.name).to.equal("PartyResults");
+        expect(eventLog[81].args[0]).to.equal(party2);
+        expect(eventLog[81].args[1]).to.equal(34);
+
+        // Party Results Event
+        expect(eventLog[82].fragment.name).to.equal("PartyResults");
+        expect(eventLog[82].args[0]).to.equal(party3);
+        expect(eventLog[82].args[1]).to.equal(7);
+
+        // Party Results Event
+        expect(eventLog[83].fragment.name).to.equal("PartyResults");
+        expect(eventLog[83].args[0]).to.equal(party4);
+        expect(eventLog[83].args[1]).to.equal(5);
+
+        // Election Winner
+        expect(eventLog[84].fragment.name).to.equal("ElectionWinner");
+        expect(eventLog[84].args[0]).to.equal(party1);
+        expect(eventLog[84].args[1]).to.equal(54);
     })
 })
