@@ -76,7 +76,7 @@ contract FPTP {
     event CandidateAdded(bytes32 candidateName, bytes32 party, bytes32 constituencyName);
     event PartyAdded(bytes32 partyName);
     event VoterAdded(address voterAddress, bytes32 constituencyName);
-    event VoteCast(address voterAddress);
+    event VoteCast(address voterAddress, bytes32 candidateName);
     event ConstituencyWinner(bytes32 constituencyName, bytes32 winningCandidateName, bytes32 winningCandidatePartyName);
     event AllConstituencyWinnersCalculated();
     event ElectionResultsCalculated();
@@ -321,7 +321,7 @@ contract FPTP {
         voter.voted = true;
 
         // Record that the voter has cast their vote
-        emit VoteCast(msg.sender);
+        emit VoteCast(msg.sender, candidateName);
         
         return true;
     }
