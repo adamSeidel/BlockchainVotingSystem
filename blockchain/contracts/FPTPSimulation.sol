@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 // *** TESTING CONTRACT USED ONLY FOR ELECTION SIMULATION PURPOSES ***
-/// @title First Past the Post election contract
+/// @title First Past the Post election contract used for simulation purposes
 /// @author Adam G. Seidel
 contract FPTPSimulation {
     // Voter structure
