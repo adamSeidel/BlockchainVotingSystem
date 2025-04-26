@@ -367,9 +367,11 @@ contract AMSAmend {
         // Record the voters party vote against thier data structure
         voter.partyVote = partyName;
 
+        // Voter is voting for the first time
         if (!voter.voted) {
             // Record that the voter has cast thier first vote
             emit VoteCast(msg.sender, candidateName, partyName);
+        // Voter is amending thier vote
         } else {
             // Record that the voter has ammended thier vote
             emit VoteAmended(msg.sender, candidateName, partyName);

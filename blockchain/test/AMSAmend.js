@@ -2,7 +2,7 @@ const fs = require("fs");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("Additional Member System - Add Constituency", function () {
+describe("Additional Member System Amend - Add Constituency", function () {
     beforeEach(async function () {
         [admin, voter] = await ethers.getSigners();
 
@@ -87,7 +87,7 @@ describe("Additional Member System - Add Constituency", function () {
     })
 })
 
-describe("Additional Member System -  Add Constituency Candidate", function () {
+describe("Additional Member System Amend -  Add Constituency Candidate", function () {
     // Test constituency name
     const constituencyName = ethers.encodeBytes32String("Test Constituency");
     
@@ -254,7 +254,7 @@ describe("Additional Member System -  Add Constituency Candidate", function () {
     })
 })
 
-describe("Additional Member System - Add Voter", function () {
+describe("Additional Member System Amend - Add Voter", function () {
     // Test constituency name
     const constituencyName = ethers.encodeBytes32String("Test Constituency");
 
@@ -351,7 +351,7 @@ describe("Additional Member System - Add Voter", function () {
     })
 })
 
-describe("Additional Member System - Cast Vote", function () {
+describe("Additional Member System Amend - Cast Vote", function () {
     // Test constituency name
     const constituencyName = ethers.encodeBytes32String("Test Constituency");
 
@@ -571,7 +571,7 @@ describe("Additional Member System - Cast Vote", function () {
     })
 })
 
-describe("Additional Member System - Start Election", function () {
+describe("Additional Member System Amend - Start Election", function () {
     // Test constituency name
     const constituencyName = ethers.encodeBytes32String("Test Constituency");
 
@@ -622,7 +622,7 @@ describe("Additional Member System - Start Election", function () {
     })
 })
 
-describe("Additional Member System - End Election", function () {
+describe("Additional Member System Amend - End Election", function () {
     // Test constituency name
     const constituencyName = ethers.encodeBytes32String("Test Constituency");
 
@@ -699,7 +699,7 @@ describe("Additional Member System - End Election", function () {
     })
 })
 
-describe("Additional Member System - Calculate Election Results", function () {
+describe("Additional Member System Amend - Calculate Election Results", function () {
     it("Election results cannot be calculated twice", async function () {
         [admin, voter, voter2, voter3, voter4] = await ethers.getSigners();
 
@@ -1129,7 +1129,7 @@ describe("Additional Member System - Calculate Election Results", function () {
     })
 })
 
-describe("Additional Member System - Calculate Election Results with amended votes", function () {
+describe("Additional Member System Amend - Calculate Election Results with amended votes", function () {
     it("Should correctly calculate the election winner - Wikipedia AMS Example with ammended votes", async function () {
         // Test of an example AMSAmend election from
         // https://en.wikipedia.org/wiki/Additional-member_system
