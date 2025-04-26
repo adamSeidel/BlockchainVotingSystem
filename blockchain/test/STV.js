@@ -1310,7 +1310,3 @@ describe("Single Transferable Vote - End Election", function () {
         expect(eventLog[10].args[0]).to.equal(party1, 1);
     })
 })
-
-
-
-// Simulate an election using the Uk General eleciton data
