@@ -597,13 +597,13 @@ contract STV {
                 // Index of the candidate with the highest votes seen so far
                 uint highestCandidateIndex = type(uint).max;
 
-                // Find candidate with the most votes
+                // Find candidate with the most votes that is not elected
                 for (uint j = 0; j < constituency.candidates.length; j++) {
                     // Retrieve candidate information
                     Candidate storage candidate = constituency.candidates[j];
 
                     // New highest number of votes seen
-                    if (candidate.votes > highestVoteCount) {
+                    if (candidate.votes > highestVoteCount && !candidate.elected) {
                         // Update highest vote count
                         highestVoteCount = candidate.votes;
                         // Update index of the candidate with the most votes
