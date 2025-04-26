@@ -316,9 +316,11 @@ contract FPTPAmend {
         // Record the voters vote against their data structure
         voter.vote = candidateName;
 
+        // Voter is voting for the first time
         if (!voter.voted) {
             // Record that the voter has cast their first vote
             emit VoteCast(msg.sender, candidateName);
+        // Voter is amending their vote
         } else {
             // Record that the voter has ammended their vote
             emit VoteAmended(msg.sender, candidateName);
