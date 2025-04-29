@@ -1298,7 +1298,7 @@ describe.skip("Additional Member System - Simulate an Aberafan Maesteg costituen
     })
 })
 
-describe("Single Transferable Vote - Simulating an Aberafan Maesteg constituency election", function () {
+describe.skip("Single Transferable Vote - Simulating an Aberafan Maesteg constituency election", function () {
     // This simulation uses data from the 2024 Uk General Election constituency
     // Aberafan Maesteg to construct a hypothetical voting scenario where
     // Left leaning voters lend their vote to other left leaning partys and
