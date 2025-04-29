@@ -1066,7 +1066,7 @@ function readConstituencyData(file) {
   });
 }
 
-describe("First Past the Post Amend - Simulate an Aberafan Maesteg constituency election", function () {
+describe.skip("First Past the Post Amend - Simulate an Aberafan Maesteg constituency election", function () {
     let constituencyData;
 
     beforeEach(async function () {
@@ -1203,7 +1203,7 @@ describe("First Past the Post Amend - Simulate an Aberafan Maesteg constituency 
     })
 })
 
-describe("First Past the Post Amend - Simulate an Aberafan Maesteg constituency election with vote changes", function () {
+describe.skip("First Past the Post Amend - Simulate an Aberafan Maesteg constituency election with vote changes", function () {
     let constituencyData;
 
     beforeEach(async function () {

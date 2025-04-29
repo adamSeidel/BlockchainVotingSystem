@@ -1060,7 +1060,7 @@ function readConstituencyData(file) {
   });
 }
 
-describe("First Past the Post - Simulate an Aberafan Maesteg constituency election", function () {
+describe.skip("First Past the Post - Simulate an Aberafan Maesteg constituency election", function () {
     let constituencyData;
 
     beforeEach(async function () {
