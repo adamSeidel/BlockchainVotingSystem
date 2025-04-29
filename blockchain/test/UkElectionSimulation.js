@@ -63,16 +63,7 @@ describe.skip("First Past the Post - Simulate an Aberafan Maesteg constituency e
 
         await election.waitForDeployment();
     })
-    
-    // Time to add voters: ~4:31.657 (m:ss:mmm)
-    // Time to cast votes: ~3:29.810 (m:ss:mmm)
 
-    // Estimated time to add voters for the UK General Election: 214,916.3507466957 / 2.5 days
-    // Estimated time to cast votes for the Uk General Election: 165,747.2963323225 seconds / 1.9 days
-
-    // Estimated cost to add voters for the Uk General Election: £1,440,467
-    // Estimated cost to cast votes for the Uk General Election: £864,280.20
-    // Estimated total cost: ~£2,304,747.20
     it("Simulate an Aberafan Maesteg constituency election vote", async function () {
         this.timeout(1000000);
 
@@ -144,9 +135,9 @@ describe.skip("First Past the Post - Simulate an Aberafan Maesteg constituency e
         }
         console.timeEnd("Cast Votes")
 
-        console.time("Calculate Election Results");
+        console.time("End Election")
         const tx = await election.endElection()
-        console.timeEnd("Calculate Election Results");
+        console.timeEnd("End Election")
 
         const results = await tx.wait()
         const eventLog = results.logs
@@ -218,6 +209,7 @@ describe.skip("First Past the Post - Simulating a full general election", functi
         // Voters array
         let voters = [];
 
+        console.time("Add Constituencies")
         // Add all the election constiuencies
         for (let i = 0; i < constituencyData.length; i++) {
             // Add the constituency
@@ -225,14 +217,23 @@ describe.skip("First Past the Post - Simulating a full general election", functi
             await expect(election.addConstituency(constituencyName))
                 .to.emit(election, "ConstituencyAdded")
                 .withArgs(constituencyName);
+        }
+        console.timeEnd("Add Constituencies")
 
+        console.time("Add Candidates")
+        for (let i = 0; i < constituencyData.length; i++) {
+            const constituencyName = constituencyData[i].constituencyName
             // Add the candidates to the constituency
             for (let j = 0; j < candidateNames.length; j++) {
                 await expect(election.addConstituencyCandidate(candidateNames[j], candidateNames[j], constituencyName))
                     .to.emit(election, "CandidateAdded")
                     .withArgs(candidateNames[j], candidateNames[j], constituencyName);
             }
+        }
+        console.timeEnd("Add Candidates")
 
+        for (let i = 0; i < constituencyData.length; i++) {
+            const constituencyName = constituencyData[i].constituencyName
             // Add the votes to each constituency
             for (let j = 0; j < candidateNames.length; j++) {
                 const voter = ethers.Wallet.createRandom();
@@ -252,8 +253,10 @@ describe.skip("First Past the Post - Simulating a full general election", functi
             }
         }
 
+        console.time("Start Election")
         // Start the election
         await election.startElection();
+        console.timeEnd("Start Election")
 
         // Voter index
         k = 0;
@@ -603,8 +606,10 @@ describe.skip("Additional Member System - Simulate an Aberafan Maesteg costituen
         console.timeEnd("AddVoters")
 
         // Start the election
+        console.time("Start Election")
         await expect(election.startElection())
             .to.emit(election, "ElectionStarted");
+        console.timeEnd("Start Election")
 
 
         console.time("Cast Votes")
@@ -799,6 +804,7 @@ describe.skip("Additional Member System - Simulate a full general election", fun
         // Voters array
         let voters = [];
 
+        console.time("Add Constituencies")
         // Add all the election constituencies
         for (let i = 0; i < constituencyData.length; i++) {
             // Add the constituency
@@ -806,14 +812,23 @@ describe.skip("Additional Member System - Simulate a full general election", fun
             await expect(election.addConstituency(constituencyName))
                 .to.emit(election, "ConstituencyAdded")
                 .withArgs(constituencyName);
+        }
+        console.timeEnd("Add Constituencies")
 
+        console.time("Add Candidates")
+        for (let i = 0; i < constituencyData.length; i++) {
+            const constituencyName = constituencyData[i].constituencyName        
             // Add the candidates to the constituency
             for (let j = 0; j < candidateNames.length; j++) {
                 await expect(election.addConstituencyCandidate(candidateNames[j], candidateNames[j], constituencyName))
                     .to.emit(election, "CandidateAdded")
                     .withArgs(candidateNames[j], candidateNames[j], constituencyName);
             }
+        }
+        console.timeEnd("Add Candidates")
 
+        for (let i = 0; i < constituencyData.length; i++) {
+            const constituencyName = constituencyData[i].constituencyName
             // Add the votes to each constituency
             for (let j = 0; j < candidateNames.length; j++) {
                 const voter = ethers.Wallet.createRandom();
@@ -833,8 +848,10 @@ describe.skip("Additional Member System - Simulate a full general election", fun
             }
         }
 
+        console.time("Start Election")
         // Start the election
         await election.startElection();
+        console.timeEnd("Start Election")
 
         // Voter index
         k = 0;
@@ -1281,7 +1298,7 @@ describe.skip("Additional Member System - Simulate an Aberafan Maesteg costituen
     })
 })
 
-describe.skip("Single Transferable Vote - Simulating an Aberafan Maesteg constituency election", function () {
+describe("Single Transferable Vote - Simulating an Aberafan Maesteg constituency election", function () {
     // This simulation uses data from the 2024 Uk General Election constituency
     // Aberafan Maesteg to construct a hypothetical voting scenario where
     // Left leaning voters lend their vote to other left leaning partys and
@@ -1512,7 +1529,7 @@ describe.skip("Single Transferable Vote - Simulating an Aberafan Maesteg constit
     })
 })
 
-describe("Single Transferable Vote - Simulating an Aberafan Maesteg constituency election with amended votes", function () {
+describe.skip("Single Transferable Vote - Simulating an Aberafan Maesteg constituency election with amended votes", function () {
     // This simulation uses data from the 2024 Uk General Election constituency
     // Aberafan Maesteg to construct a hypothetical voting scenario where
     // Left leaning voters lend their vote to other left leaning partys and
