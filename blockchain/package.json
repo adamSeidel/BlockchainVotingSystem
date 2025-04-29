@@ -23,9 +23,9 @@
     "@types/chai": "^4.3.20",
     "@types/mocha": "^10.0.10",
     "chai": "^4.5.0",
+    "dotenv": "^16.5.0",
     "ethers": "^6.13.5",
     "hardhat": "^2.22.18",
-    "hardhat-gas-reporter": "^1.0.10",
     "mocha": "^11.1.0",
     "mocha-parallel-tests": "^2.3.0",
     "solidity-coverage": "^0.8.14",
@@ -34,6 +34,7 @@
     "typescript": "^5.7.3"
   },
   "dependencies": {
-    "csv-parser": "^3.2.0"
+    "csv-parser": "^3.2.0",
+    "hardhat-gas-reporter": "^2.2.3"
   }
 }
